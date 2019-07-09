@@ -26,7 +26,7 @@ import hunt.pool.PooledObject;
  * @param <T> the type of objects in the pool
  *
  */
-interface EvictionPolicy!(T) {
+interface EvictionPolicy(T) {
 
     /**
      * This method is called to test if an idle object in the pool should be
@@ -39,5 +39,5 @@ interface EvictionPolicy!(T) {
      * @return <code>true</code> if the object should be evicted, otherwise
      *             <code>false</code>
      */
-    boolean evict(EvictionConfig config, PooledObject!(T) underTest, int idleCount);
+    bool evict(EvictionConfig config, PooledObject!(T) underTest, int idleCount);
 }

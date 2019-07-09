@@ -29,8 +29,8 @@ module hunt.pool.BaseKeyedPooledObjectFactory;
  * @param <V> Type of element managed by this factory.
  *
  */
-abstract class BaseKeyedPooledObjectFactory!(K, V) extends BaseObject
-        implements KeyedPooledObjectFactory!(K, V) {
+abstract class BaseKeyedPooledObjectFactory(K, V) : BaseObject,
+        KeyedPooledObjectFactory!(K, V) {
 
     /**
      * Create an instance that can be served by the pool.
@@ -55,7 +55,7 @@ abstract class BaseKeyedPooledObjectFactory!(K, V) extends BaseObject
     abstract PooledObject!(V) wrap(V value);
 
     override
-    PooledObject!(V) makeObject(final K key){
+    PooledObject!(V) makeObject(K key){
         return wrap(create(key));
     }
 
@@ -69,7 +69,7 @@ abstract class BaseKeyedPooledObjectFactory!(K, V) extends BaseObject
      * @param p a {@code PooledObject} wrapping the instance to be destroyed
      */
     override
-    void destroyObject(final K key, final PooledObject!(V) p)
+    void destroyObject(K key, PooledObject!(V) p)
 {
         // The default implementation is a no-op.
     }
@@ -85,7 +85,7 @@ abstract class BaseKeyedPooledObjectFactory!(K, V) extends BaseObject
      * @return always <code>true</code> in the default implementation
      */
     override
-    boolean validateObject(final K key, final PooledObject!(V) p) {
+    bool validateObject(K key, PooledObject!(V) p) {
         return true;
     }
 
@@ -99,7 +99,7 @@ abstract class BaseKeyedPooledObjectFactory!(K, V) extends BaseObject
      * @param p a {@code PooledObject} wrapping the instance to be activated
      */
     override
-    void activateObject(final K key, final PooledObject!(V) p)
+    void activateObject(K key, PooledObject!(V) p)
 {
         // The default implementation is a no-op.
     }
@@ -114,7 +114,7 @@ abstract class BaseKeyedPooledObjectFactory!(K, V) extends BaseObject
      * @param p a {@code PooledObject} wrapping the instance to be passivated
      */
     override
-    void passivateObject(final K key, final PooledObject!(V) p)
+    void passivateObject(K key, PooledObject!(V) p)
 {
         // The default implementation is a no-op.
     }

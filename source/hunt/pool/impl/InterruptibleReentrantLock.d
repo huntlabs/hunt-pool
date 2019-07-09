@@ -16,9 +16,12 @@
  */
 module hunt.pool.impl.InterruptibleReentrantLock;
 
-import java.util.Collection;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
+import hunt.collection.Collection;
+// import java.util.concurrent.locks.Condition;
+// import java.util.concurrent.locks.ReentrantLock;
+
+import core.sync.mutex;
+import core.sync.condition;
 
 /**
  * This sub-class was created to expose the waiting threads so that they can be
@@ -28,29 +31,29 @@ import java.util.concurrent.locks.ReentrantLock;
  * This class is intended to be thread-safe.
  *
  */
-class InterruptibleReentrantLock : ReentrantLock {
+// class InterruptibleReentrantLock : ReentrantLock {
 
 
 
-    /**
-     * Create a new InterruptibleReentrantLock with the given fairness policy.
-     *
-     * @param fairness true means threads should acquire contended locks as if
-     * waiting in a FIFO queue
-     */
-    InterruptibleReentrantLock(final boolean fairness) {
-        super(fairness);
-    }
+//     /**
+//      * Create a new InterruptibleReentrantLock with the given fairness policy.
+//      *
+//      * @param fairness true means threads should acquire contended locks as if
+//      * waiting in a FIFO queue
+//      */
+//     InterruptibleReentrantLock(bool fairness) {
+//         super(fairness);
+//     }
 
-    /**
-     * Interrupt the threads that are waiting on a specific condition
-     *
-     * @param condition the condition on which the threads are waiting.
-     */
-    void interruptWaiters(final Condition condition) {
-        final Collection!(Thread) threads = getWaitingThreads(condition);
-        foreach(final Thread thread ; threads) {
-            thread.interrupt();
-        }
-    }
-}
+//     /**
+//      * Interrupt the threads that are waiting on a specific condition
+//      *
+//      * @param condition the condition on which the threads are waiting.
+//      */
+//     void interruptWaiters(Condition condition) {
+//         Collection!(Thread) threads = getWaitingThreads(condition);
+//         foreach(Thread thread ; threads) {
+//             thread.interrupt();
+//         }
+//     }
+// }

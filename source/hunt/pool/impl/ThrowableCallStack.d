@@ -16,9 +16,9 @@
  */
 module hunt.pool.impl.ThrowableCallStack;
 
-import java.io.PrintWriter;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+// import java.io.PrintWriter;
+// import java.text.DateFormat;
+// import java.text.SimpleDateFormat;
 
 /**
  * CallStack strategy that uses the stack trace from a {@link Throwable}. This strategy, while slower than the
@@ -27,59 +27,59 @@ import java.text.SimpleDateFormat;
  *
  * @see Throwable#fillInStackTrace()
  */
-class ThrowableCallStack : CallStack {
+// class ThrowableCallStack : CallStack {
 
-    private final String messageFormat;
-    //@GuardedBy("dateFormat")
-    private final DateFormat dateFormat;
+//     private string messageFormat;
+//     //@GuardedBy("dateFormat")
+//     private DateFormat dateFormat;
 
-    private volatile Snapshot snapshot;
+//     // private Snapshot snapshot;
 
-    /**
-     * Create a new instance.
-     *
-     * @param messageFormat message format
-     * @param useTimestamp whether to format the dates in the output message or not
-     */
-    ThrowableCallStack(final String messageFormat, final boolean useTimestamp) {
-        this.messageFormat = messageFormat;
-        this.dateFormat = useTimestamp ? new SimpleDateFormat(messageFormat) : null;
-    }
+//     /**
+//      * Create a new instance.
+//      *
+//      * @param messageFormat message format
+//      * @param useTimestamp whether to format the dates in the output message or not
+//      */
+//     ThrowableCallStack(string messageFormat, bool useTimestamp) {
+//         this.messageFormat = messageFormat;
+//         this.dateFormat = useTimestamp ? new SimpleDateFormat(messageFormat) : null;
+//     }
 
-    override
-    synchronized boolean printStackTrace(final PrintWriter writer) {
-        final Snapshot snapshotRef = this.snapshot;
-        if (snapshotRef == null) {
-            return false;
-        }
-        final String message;
-        if (dateFormat == null) {
-            message = messageFormat;
-        } else {
-            synchronized (dateFormat) {
-                message = dateFormat.format(Long.valueOf(snapshotRef.timestamp));
-            }
-        }
-        writer.println(message);
-        snapshotRef.printStackTrace(writer);
-        return true;
-    }
+//     override
+//     synchronized bool printStackTrace(PrintWriter writer) {
+//         Snapshot snapshotRef = this.snapshot;
+//         if (snapshotRef is null) {
+//             return false;
+//         }
+//         string message;
+//         if (dateFormat is null) {
+//             message = messageFormat;
+//         } else {
+//             synchronized (dateFormat) {
+//                 message = dateFormat.format(Long.valueOf(snapshotRef.timestamp));
+//             }
+//         }
+//         writer.println(message);
+//         snapshotRef.printStackTrace(writer);
+//         return true;
+//     }
 
-    override
-    void fillInStackTrace() {
-        snapshot = new Snapshot();
-    }
+//     override
+//     void fillInStackTrace() {
+//         snapshot = new Snapshot();
+//     }
 
-    override
-    void clear() {
-        snapshot = null;
-    }
+//     override
+//     void clear() {
+//         snapshot = null;
+//     }
 
-    /**
-     * A snapshot of a throwable.
-     */
-    private static class Snapshot : Throwable {
+//     /**
+//      * A snapshot of a throwable.
+//      */
+//     private static class Snapshot : Throwable {
 
-        private final long timestamp = DateTimeHelper.currentTimeMillis()();
-    }
-}
+//         private long timestamp = DateTimeHelper.currentTimeMillis()();
+//     }
+// }

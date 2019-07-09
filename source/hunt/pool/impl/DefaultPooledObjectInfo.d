@@ -16,9 +16,12 @@
  */
 module hunt.pool.impl.DefaultPooledObjectInfo;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.text.SimpleDateFormat;
+import hunt.pool.impl.DefaultPooledObjectInfoMBean;
+// import java.io.PrintWriter;
+// import java.io.StringWriter;
+// import java.text.SimpleDateFormat;
+
+import hunt.Exceptions;
 
 import hunt.pool.PooledObject;
 
@@ -29,14 +32,14 @@ import hunt.pool.PooledObject;
  */
 class DefaultPooledObjectInfo : DefaultPooledObjectInfoMBean {
 
-    private final PooledObject<?> pooledObject;
+    private IPooledObject pooledObject;
 
     /**
      * Create a new instance for the given pooled object.
      *
      * @param pooledObject The pooled object that this instance will represent
      */
-    DefaultPooledObjectInfo(final PooledObject<?> pooledObject) {
+    this(IPooledObject pooledObject) {
         this.pooledObject = pooledObject;
     }
 
@@ -46,8 +49,8 @@ class DefaultPooledObjectInfo : DefaultPooledObjectInfoMBean {
     }
 
     override
-    String getCreateTimeFormatted() {
-        final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
+    string getCreateTimeFormatted() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
         return sdf.format(Long.valueOf(pooledObject.getCreateTime()));
     }
 
@@ -57,14 +60,14 @@ class DefaultPooledObjectInfo : DefaultPooledObjectInfoMBean {
     }
 
     override
-    String getLastBorrowTimeFormatted() {
-        final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
+    string getLastBorrowTimeFormatted() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
         return sdf.format(Long.valueOf(pooledObject.getLastBorrowTime()));
     }
 
     override
-    String getLastBorrowTrace() {
-        final StringWriter sw = new StringWriter();
+    string getLastBorrowTrace() {
+        StringWriter sw = new StringWriter();
         pooledObject.printStackTrace(new PrintWriter(sw));
         return sw.toString();
     }
@@ -75,35 +78,36 @@ class DefaultPooledObjectInfo : DefaultPooledObjectInfoMBean {
     }
 
     override
-    String getLastReturnTimeFormatted() {
-        final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
+    string getLastReturnTimeFormatted() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
         return sdf.format(Long.valueOf(pooledObject.getLastReturnTime()));
     }
 
     override
-    String getPooledObjectType() {
+    string getPooledObjectType() {
         return pooledObject.getObject().getClass().getName();
     }
 
     override
-    String getPooledObjectToString() {
+    string getPooledObjectToString() {
         return pooledObject.getObject().toString();
     }
 
     override
     long getBorrowedCount() {
+        implementationMissing(false);
         // TODO Simplify this once getBorrowedCount has been added to PooledObject
-        if (pooledObject instanceof DefaultPooledObject) {
-            return ((DefaultPooledObject<?>) pooledObject).getBorrowedCount();
-        }
+        // if (pooledObject instanceof DefaultPooledObject) {
+        //     return ((DefaultPooledObject<?>) pooledObject).getBorrowedCount();
+        // }
         return -1;
     }
 
     /**
      */
     override
-    String toString() {
-        final StringBuilder builder = new StringBuilder();
+    string toString() {
+        StringBuilder builder = new StringBuilder();
         builder.append("DefaultPooledObjectInfo [pooledObject=");
         builder.append(pooledObject);
         builder.append("]");

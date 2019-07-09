@@ -16,8 +16,9 @@
  */
 module hunt.pool.impl.GenericKeyedObjectPoolMXBean;
 
-import java.util.List;
-import java.util.Map;
+import hunt.collection.List;
+import hunt.collection.Map;
+
 
 /**
  * Defines the methods that will be made available via JMX.
@@ -32,7 +33,7 @@ import java.util.Map;
  * @param <K> The type of keys maintained by the pool.
  *
  */
-interface GenericKeyedObjectPoolMXBean!(K) {
+interface GenericKeyedObjectPoolMXBean(K) {
 
     // Expose getters for configuration settings
 
@@ -40,19 +41,19 @@ interface GenericKeyedObjectPoolMXBean!(K) {
      * See {@link GenericKeyedObjectPool#getBlockWhenExhausted()}
      * @return See {@link GenericKeyedObjectPool#getBlockWhenExhausted()}
      */
-    boolean getBlockWhenExhausted();
+    bool getBlockWhenExhausted();
 
     /**
      * See {@link GenericKeyedObjectPool#getFairness()}
      * @return See {@link GenericKeyedObjectPool#getFairness()}
      */
-    boolean getFairness();
+    bool getFairness();
 
     /**
      * See {@link GenericKeyedObjectPool#getLifo()}
      * @return See {@link GenericKeyedObjectPool#getLifo()}
      */
-    boolean getLifo();
+    bool getLifo();
 
     /**
      * See {@link GenericKeyedObjectPool#getMaxIdlePerKey()}
@@ -112,25 +113,25 @@ interface GenericKeyedObjectPoolMXBean!(K) {
      * See {@link GenericKeyedObjectPool#getTestOnCreate()}
      * @return See {@link GenericKeyedObjectPool#getTestOnCreate()}
      */
-    boolean getTestOnCreate();
+    bool getTestOnCreate();
 
     /**
      * See {@link GenericKeyedObjectPool#getTestOnBorrow()}
      * @return See {@link GenericKeyedObjectPool#getTestOnBorrow()}
      */
-    boolean getTestOnBorrow();
+    bool getTestOnBorrow();
 
     /**
      * See {@link GenericKeyedObjectPool#getTestOnReturn()}
      * @return See {@link GenericKeyedObjectPool#getTestOnReturn()}
      */
-    boolean getTestOnReturn();
+    bool getTestOnReturn();
 
     /**
      * See {@link GenericKeyedObjectPool#getTestWhileIdle()}
      * @return See {@link GenericKeyedObjectPool#getTestWhileIdle()}
      */
-    boolean getTestWhileIdle();
+    bool getTestWhileIdle();
 
     /**
      * See {@link GenericKeyedObjectPool#getTimeBetweenEvictionRunsMillis()}
@@ -142,7 +143,7 @@ interface GenericKeyedObjectPoolMXBean!(K) {
      * See {@link GenericKeyedObjectPool#isClosed()}
      * @return See {@link GenericKeyedObjectPool#isClosed()}
      */
-    boolean isClosed();
+    bool isClosed();
 
     // Expose getters for monitoring attributes
 
@@ -150,7 +151,7 @@ interface GenericKeyedObjectPoolMXBean!(K) {
      * See {@link GenericKeyedObjectPool#getNumActivePerKey()}
      * @return See {@link GenericKeyedObjectPool#getNumActivePerKey()}
      */
-    Map!(String,Integer) getNumActivePerKey();
+    Map!(string,Integer) getNumActivePerKey();
 
     /**
      * See {@link GenericKeyedObjectPool#getBorrowedCount()}
@@ -216,7 +217,7 @@ interface GenericKeyedObjectPoolMXBean!(K) {
      * See {@link GenericKeyedObjectPool#getCreationStackTrace()}
      * @return See {@link GenericKeyedObjectPool#getCreationStackTrace()}
      */
-    String getCreationStackTrace();
+    string getCreationStackTrace();
 
     /**
      * See {@link GenericKeyedObjectPool#getNumWaiters()}
@@ -228,11 +229,11 @@ interface GenericKeyedObjectPoolMXBean!(K) {
      * See {@link GenericKeyedObjectPool#getNumWaitersByKey()}
      * @return See {@link GenericKeyedObjectPool#getNumWaitersByKey()}
      */
-    Map!(String,Integer) getNumWaitersByKey();
+    Map!(string,Integer) getNumWaitersByKey();
 
     /**
      * See {@link GenericKeyedObjectPool#listAllObjects()}
      * @return See {@link GenericKeyedObjectPool#listAllObjects()}
      */
-    Map!(String,List!(DefaultPooledObjectInfo)) listAllObjects();
+    Map!(string,List!(DefaultPooledObjectInfo)) listAllObjects();
 }

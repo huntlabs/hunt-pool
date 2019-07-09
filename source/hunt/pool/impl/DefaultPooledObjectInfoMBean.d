@@ -43,7 +43,7 @@ interface DefaultPooledObjectInfoMBean {
      * @return The creation time for the pooled object formatted as
      *         <code>yyyy-MM-dd HH:mm:ss Z</code>
      */
-    String getCreateTimeFormatted();
+    string getCreateTimeFormatted();
 
     /**
      * Obtain the time (using the same basis as
@@ -59,7 +59,7 @@ interface DefaultPooledObjectInfoMBean {
      * @return The last borrowed time for the pooled object formated as
      *         <code>yyyy-MM-dd HH:mm:ss Z</code>
      */
-    String getLastBorrowTimeFormatted();
+    string getLastBorrowTimeFormatted();
 
     /**
      * Obtain the stack trace recorded when the pooled object was last borrowed.
@@ -67,7 +67,7 @@ interface DefaultPooledObjectInfoMBean {
      * @return The stack trace showing which code last borrowed the pooled
      *         object
      */
-    String getLastBorrowTrace();
+    string getLastBorrowTrace();
 
 
     /**
@@ -84,7 +84,7 @@ interface DefaultPooledObjectInfoMBean {
      * @return The last returned time for the pooled object formated as
      *         <code>yyyy-MM-dd HH:mm:ss Z</code>
      */
-    String getLastReturnTimeFormatted();
+    string getLastReturnTimeFormatted();
 
     /**
      * Obtain the name of the class of the pooled object.
@@ -93,17 +93,17 @@ interface DefaultPooledObjectInfoMBean {
      *
      * @typeid(see).name
      */
-    String getPooledObjectType();
+    string getPooledObjectType();
 
     /**
-     * Provides a String form of the wrapper for debug purposes. The format is
+     * Provides a string form of the wrapper for debug purposes. The format is
      * not fixed and may change at any time.
      *
      * @return A string representation of the pooled object
      *
      * @see Object#toString()
      */
-    String getPooledObjectToString();
+    string getPooledObjectToString();
 
     /**
      * Get the number of times this object has been borrowed.

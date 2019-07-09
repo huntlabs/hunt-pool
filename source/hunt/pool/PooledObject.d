@@ -16,27 +16,14 @@
  */
 module hunt.pool.PooledObject;
 
-import java.io.PrintWriter;
-import java.util.Deque;
+import hunt.pool.PooledObjectState;
 
-/**
- * Defines the wrapper that is used to track the additional information, such as
- * state, for the pooled objects.
- * <p>
- * Implementations of this class are required to be thread-safe.
- *
- * @param <T> the type of object in the pool
- *
- */
-interface PooledObject!(T) extends Comparable!(PooledObject!(T)) {
+// import java.io.PrintWriter;
+// import java.util.Deque;
 
-    /**
-     * Obtains the underlying object that is wrapped by this instance of
-     * {@link PooledObject}.
-     *
-     * @return The wrapped object
-     */
-    T getObject();
+import hunt.collection.Deque;
+
+interface IPooledObject {
 
     /**
      * Obtains the time (using the same basis as
@@ -89,34 +76,17 @@ interface PooledObject!(T) extends Comparable!(PooledObject!(T)) {
      */
     long getLastUsedTime();
 
-    /**
-     * Orders instances based on idle time - i.e. the length of time since the
-     * instance was returned to the pool. Used by the GKOP idle object evictor.
-     *<p>
-     * Note: This class has a natural ordering that is inconsistent with
-     *       equals if distinct objects have the same identity hash code.
-     * </p>
-     * <p>
-     * {@inheritDoc}
-     * </p>
-     */
-    override
-    int compareTo(PooledObject!(T) other);
+    bool opEquals(Object obj);
 
-    override
-    boolean equals(Object obj);
-
-    override
-    size_t toHash() @trusted nothrow();
+    size_t toHash() @trusted nothrow;
 
     /**
-     * Provides a String form of the wrapper for debug purposes. The format is
+     * Provides a string form of the wrapper for debug purposes. The format is
      * not fixed and may change at any time.
      * <p>
      * {@inheritDoc}
      */
-    override
-    String toString();
+    string toString();
 
     /**
      * Attempts to place the pooled object in the
@@ -126,24 +96,14 @@ interface PooledObject!(T) extends Comparable!(PooledObject!(T)) {
      *         {@link PooledObjectState#EVICTION} state otherwise
      *         <code>false</code>
      */
-    boolean startEvictionTest();
-
-    /**
-     * Called to inform the object that the eviction test has ended.
-     *
-     * @param idleQueue The queue of idle objects to which the object should be
-     *                  returned
-     *
-     * @return  Currently not used
-     */
-    boolean endEvictionTest(Deque!(PooledObject!(T)) idleQueue);
+    bool startEvictionTest();
 
     /**
      * Allocates the object.
      *
      * @return {@code true} if the original state was {@link PooledObjectState#IDLE IDLE}
      */
-    boolean allocate();
+    bool allocate();
 
     /**
      * Deallocates the object and sets it {@link PooledObjectState#IDLE IDLE}
@@ -151,7 +111,7 @@ interface PooledObject!(T) extends Comparable!(PooledObject!(T)) {
      *
      * @return {@code true} if the state was {@link PooledObjectState#ALLOCATED ALLOCATED}
      */
-    boolean deallocate();
+    bool deallocate();
 
     /**
      * Sets the state to {@link PooledObjectState#INVALID INVALID}
@@ -166,7 +126,7 @@ interface PooledObject!(T) extends Comparable!(PooledObject!(T)) {
      * @param   logAbandoned    The new configuration setting for abandoned
      *                          object tracking
      */
-    void setLogAbandoned(boolean logAbandoned);
+    void setLogAbandoned(bool logAbandoned);
 
 // TODO: uncomment in 3.0 (API compatibility)
 //    /**
@@ -178,7 +138,7 @@ interface PooledObject!(T) extends Comparable!(PooledObject!(T)) {
 //     * @param requireFullStackTrace the new configuration setting for abandoned object
 //     *                              logging
 //     */
-//    void setRequireFullStackTrace(boolean requireFullStackTrace);
+//    void setRequireFullStackTrace(bool requireFullStackTrace);
 
     /**
      * Record the current stack trace as the last time the object was used.
@@ -192,7 +152,7 @@ interface PooledObject!(T) extends Comparable!(PooledObject!(T)) {
      *
      * @param   writer  The destination for the debug output
      */
-    void printStackTrace(PrintWriter writer);
+    // void printStackTrace(PrintWriter writer);
 
     /**
      * Returns the state of this object.
@@ -216,4 +176,48 @@ interface PooledObject!(T) extends Comparable!(PooledObject!(T)) {
     // * Get the number of times this object has been borrowed.
     // */
     //long getBorrowedCount();
+}
+
+/**
+ * Defines the wrapper that is used to track the additional information, such as
+ * state, for the pooled objects.
+ * <p>
+ * Implementations of this class are required to be thread-safe.
+ *
+ * @param <T> the type of object in the pool
+ *
+ */
+interface PooledObject(T) : IPooledObject, Comparable!(PooledObject!(T)) {
+
+    /**
+     * Obtains the underlying object that is wrapped by this instance of
+     * {@link PooledObject}.
+     *
+     * @return The wrapped object
+     */
+    T getObject();
+
+    /**
+     * Orders instances based on idle time - i.e. the length of time since the
+     * instance was returned to the pool. Used by the GKOP idle object evictor.
+     *<p>
+     * Note: This class has a natural ordering that is inconsistent with
+     *       equals if distinct objects have the same identity hash code.
+     * </p>
+     * <p>
+     * {@inheritDoc}
+     * </p>
+     */
+    int compareTo(PooledObject!(T) other);
+
+    /**
+     * Called to inform the object that the eviction test has ended.
+     *
+     * @param idleQueue The queue of idle objects to which the object should be
+     *                  returned
+     *
+     * @return  Currently not used
+     */
+    bool endEvictionTest(Deque!(PooledObject!(T)) idleQueue);
+
 }

@@ -16,7 +16,10 @@
  */
 module hunt.pool.impl.NoOpCallStack;
 
-import java.io.PrintWriter;
+import hunt.pool.impl.CallStack;
+
+
+// import java.io.PrintWriter;
 
 /**
  * CallStack strategy using no-op implementations of all functionality. Can be used by default when abandoned object
@@ -28,15 +31,19 @@ class NoOpCallStack : CallStack {
     /**
      * Singleton instance.
      */
-    static final CallStack INSTANCE = new NoOpCallStack();
+    __gshared CallStack INSTANCE; // = new NoOpCallStack();
 
-    private NoOpCallStack() {
+    shared static this() {
+        INSTANCE = new NoOpCallStack();
     }
 
-    override
-    boolean printStackTrace(final PrintWriter writer) {
-        return false;
+    private this() {
     }
+
+    // override
+    // bool printStackTrace(PrintWriter writer) {
+    //     return false;
+    // }
 
     override
     void fillInStackTrace() {

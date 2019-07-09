@@ -16,6 +16,8 @@
  */
 module hunt.pool.impl.GenericKeyedObjectPoolConfig;
 
+import hunt.Exceptions;
+
 /**
  * A simple "struct" encapsulating the configuration for a
  * {@link GenericKeyedObjectPool}.
@@ -27,7 +29,7 @@ module hunt.pool.impl.GenericKeyedObjectPoolConfig;
  *
  * @param <T> Type of element pooled.
  */
-class GenericKeyedObjectPoolConfig!(T) extends BaseObjectPoolConfig!(T) {
+class GenericKeyedObjectPoolConfig(T) : BaseObjectPoolConfig!(T) {
 
     /**
      * The default value for the {@code maxTotalPerKey} configuration attribute.
@@ -65,7 +67,7 @@ class GenericKeyedObjectPoolConfig!(T) extends BaseObjectPoolConfig!(T) {
     /**
      * Create a new configuration with default settings.
      */
-    GenericKeyedObjectPoolConfig() {
+    this() {
     }
 
     /**
@@ -90,7 +92,7 @@ class GenericKeyedObjectPoolConfig!(T) extends BaseObjectPoolConfig!(T) {
      *
      * @see GenericKeyedObjectPool#setMaxTotal(int)
      */
-    void setMaxTotal(final int maxTotal) {
+    void setMaxTotal(int maxTotal) {
         this.maxTotal = maxTotal;
     }
 
@@ -116,7 +118,7 @@ class GenericKeyedObjectPoolConfig!(T) extends BaseObjectPoolConfig!(T) {
      *
      * @see GenericKeyedObjectPool#setMaxTotalPerKey(int)
      */
-    void setMaxTotalPerKey(final int maxTotalPerKey) {
+    void setMaxTotalPerKey(int maxTotalPerKey) {
         this.maxTotalPerKey = maxTotalPerKey;
     }
 
@@ -142,7 +144,7 @@ class GenericKeyedObjectPoolConfig!(T) extends BaseObjectPoolConfig!(T) {
      *
      * @see GenericKeyedObjectPool#setMinIdlePerKey(int)
      */
-    void setMinIdlePerKey(final int minIdlePerKey) {
+    void setMinIdlePerKey(int minIdlePerKey) {
         this.minIdlePerKey = minIdlePerKey;
     }
 
@@ -168,22 +170,21 @@ class GenericKeyedObjectPoolConfig!(T) extends BaseObjectPoolConfig!(T) {
      *
      * @see GenericKeyedObjectPool#setMaxIdlePerKey(int)
      */
-    void setMaxIdlePerKey(final int maxIdlePerKey) {
+    void setMaxIdlePerKey(int maxIdlePerKey) {
         this.maxIdlePerKey = maxIdlePerKey;
     }
 
-    @SuppressWarnings("unchecked")
     override
     GenericKeyedObjectPoolConfig!(T) clone() {
         try {
-            return (GenericKeyedObjectPoolConfig!(T)) super.clone();
-        } catch (final CloneNotSupportedException e) {
+            return cast(GenericKeyedObjectPoolConfig!(T)) super.clone();
+        } catch (CloneNotSupportedException e) {
             throw new AssertionError(); // Can't happen
         }
     }
 
     override
-    protected void toStringAppendFields(final StringBuilder builder) {
+    protected void toStringAppendFields(StringBuilder builder) {
         super.toStringAppendFields(builder);
         builder.append(", minIdlePerKey=");
         builder.append(minIdlePerKey);

@@ -16,13 +16,18 @@
  */
 module hunt.pool.impl.EvictionTimer;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.TimerTask;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
+// import java.security.AccessController;
+// import java.security.PrivilegedAction;
+// import java.util.TimerTask;
+// import java.util.concurrent.ScheduledFuture;
+// import java.util.concurrent.ScheduledThreadPoolExecutor;
+// import java.util.concurrent.ThreadFactory;
+// import java.util.concurrent.TimeUnit;
+
+import hunt.concurrency.thread;
+import hunt.concurrency.Delayed;
+import hunt.concurrency.ScheduledThreadPoolExecutor;
+import hunt.concurrency.ThreadFactory;
 
 /**
  * Provides a shared idle object eviction timer for all pools.
@@ -41,93 +46,92 @@ import java.util.concurrent.TimeUnit;
  * </p>
  *
  */
-class EvictionTimer {
+// class EvictionTimer {
 
-    /** Executor instance */
-    private static ScheduledThreadPoolExecutor executor; //@GuardedBy("EvictionTimer.class")
+//     /** Executor instance */
+//     private static ScheduledThreadPoolExecutor executor; //@GuardedBy("EvictionTimer.class")
 
-    /** Prevent instantiation */
-    private EvictionTimer() {
-        // Hide the default constructor
-    }
-
-
-    /**
-     */
-    override
-    String toString() {
-        final StringBuilder builder = new StringBuilder();
-        builder.append("EvictionTimer []");
-        return builder.toString();
-    }
+//     /** Prevent instantiation */
+//     private this() {
+//         // Hide the default constructor
+//     }
 
 
-    /**
-     * Add the specified eviction task to the timer. Tasks that are added with a
-     * call to this method *must* call {@link #cancel(TimerTask)} to cancel the
-     * task to prevent memory and/or thread leaks in application server
-     * environments.
-     *
-     * @param task      Task to be scheduled
-     * @param delay     Delay in milliseconds before task is executed
-     * @param period    Time in milliseconds between executions
-     */
-    static synchronized void schedule(
-            final BaseGenericObjectPool<?>.Evictor task, final long delay, final long period) {
-        if (null == executor) {
-            executor = new ScheduledThreadPoolExecutor(1, new EvictorThreadFactory());
-            executor.setRemoveOnCancelPolicy(true);
-        }
-        final ScheduledFuture<?> scheduledFuture =
-                executor.scheduleWithFixedDelay(task, delay, period, TimeUnit.MILLISECONDS);
-        task.setScheduledFuture(scheduledFuture);
-    }
+//     /**
+//      */
+//     override
+//     string toString() {
+//         StringBuilder builder = new StringBuilder();
+//         builder.append("EvictionTimer []");
+//         return builder.toString();
+//     }
 
-    /**
-     * Remove the specified eviction task from the timer.
-     *
-     * @param evictor      Task to be cancelled
-     * @param timeout   If the associated executor is no longer required, how
-     *                  long should this thread wait for the executor to
-     *                  terminate?
-     * @param unit      The units for the specified timeout
-     */
-    static synchronized void cancel(
-            final BaseGenericObjectPool<?>.Evictor evictor, final long timeout, final TimeUnit unit) {
-        if (evictor != null) {
-            evictor.cancel();
-        }
-        if (executor != null && executor.getQueue().isEmpty()) {
-            executor.shutdown();
-            try {
-                executor.awaitTermination(timeout, unit);
-            } catch (final InterruptedException e) {
-                // Swallow
-                // Significant API changes would be required to propagate this
-            }
-            executor.setCorePoolSize(0);
-            executor = null;
-        }
-    }
 
-    /**
-     * Thread factory that creates a daemon thread, with the context class loader from this class.
-     */
-    private static class EvictorThreadFactory : ThreadFactory {
+//     /**
+//      * Add the specified eviction task to the timer. Tasks that are added with a
+//      * call to this method *must* call {@link #cancel(TimerTask)} to cancel the
+//      * task to prevent memory and/or thread leaks in application server
+//      * environments.
+//      *
+//      * @param task      Task to be scheduled
+//      * @param delay     Delay in milliseconds before task is executed
+//      * @param period    Time in milliseconds between executions
+//      */
+//     static synchronized void schedule(
+//             BaseGenericObjectPool<?>.Evictor task, long delay, long period) {
+//         if (null == executor) {
+//             executor = new ScheduledThreadPoolExecutor(1, new EvictorThreadFactory());
+//             executor.setRemoveOnCancelPolicy(true);
+//         }
+//         ScheduledFuture<?> scheduledFuture =
+//                 executor.scheduleWithFixedDelay(task, delay, period, TimeUnit.MILLISECONDS);
+//         task.setScheduledFuture(scheduledFuture);
+//     }
 
-        override
-        Thread newThread(final Runnable runnable) {
-            final Thread thread = new Thread(null, runnable, "commons-pool-evictor-thread");
-            thread.setDaemon(true); // POOL-363 - Required for applications using Runtime.addShutdownHook(). --joshlandin 03.27.2019
-            AccessController.doPrivileged(new PrivilegedAction!(Void)() {
-                override
-                Void run() {
-                    thread.setContextClassLoader(EvictorThreadFactory.class.getClassLoader());
-                    return null;
-                }
-            });
+//     /**
+//      * Remove the specified eviction task from the timer.
+//      *
+//      * @param evictor      Task to be cancelled
+//      * @param timeout   If the associated executor is no longer required, how
+//      *                  long should this thread wait for the executor to
+//      *                  terminate?
+//      * @param unit      The units for the specified timeout
+//      */
+//     static synchronized void cancel(
+//             BaseGenericObjectPool<?>.Evictor evictor, long timeout, TimeUnit unit) {
+//         if (evictor !is null) {
+//             evictor.cancel();
+//         }
+//         if (executor !is null && executor.getQueue().isEmpty()) {
+//             executor.shutdown();
+//             try {
+//                 executor.awaitTermination(timeout, unit);
+//             } catch (InterruptedException e) {
+//                 // Swallow
+//                 // Significant API changes would be required to propagate this
+//             }
+//             executor.setCorePoolSize(0);
+//             executor = null;
+//         }
+//     }
 
-            return thread;
-        }
-    }
-}
+//     /**
+//      * Thread factory that creates a daemon thread, with the context class loader from this class.
+//      */
+//     private static class EvictorThreadFactory : ThreadFactory {
+
+//         Thread newThread(Runnable runnable) {
+//             ThreadEx thread = new ThreadEx(null, runnable, "commons-pool-evictor-thread");
+//             thread.setDaemon(true); // POOL-363 - Required for applications using Runtime.addShutdownHook(). --joshlandin 03.27.2019
+//             // AccessController.doPrivileged(new PrivilegedAction!(Void)() {
+//             //     override
+//             //     Void run() {
+//             //         thread.setContextClassLoader(EvictorThreadFactory.class.getClassLoader());
+//             //         return null;
+//             //     }
+//             // });
+
+//             return thread;
+//         }
+//     }
+// }

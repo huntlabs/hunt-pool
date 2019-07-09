@@ -26,7 +26,7 @@ module hunt.pool.BaseObjectPool;
  * @param <T> Type of element pooled in this pool.
  *
  */
-abstract class BaseObjectPool!(T) extends BaseObject implements ObjectPool!(T) {
+abstract class BaseObjectPool(T) : BaseObject, ObjectPool!(T) {
 
     override
     abstract T borrowObject();
@@ -97,7 +97,7 @@ abstract class BaseObjectPool!(T) extends BaseObject implements ObjectPool!(T) {
      *
      * @return <code>true</code> when this pool has been closed.
      */
-    final boolean isClosed() {
+    bool isClosed() {
         return closed;
     }
 
@@ -109,16 +109,16 @@ abstract class BaseObjectPool!(T) extends BaseObject implements ObjectPool!(T) {
      *
      * @see #isClosed()
      */
-    protected final void assertOpen(){
+    protected void assertOpen(){
         if (isClosed()) {
             throw new IllegalStateException("Pool not open");
         }
     }
 
-    private volatile boolean closed = false;
+    private bool closed = false;
 
     override
-    protected void toStringAppendFields(final StringBuilder builder) {
+    protected void toStringAppendFields(StringBuilder builder) {
         builder.append("closed=");
         builder.append(closed);
     }

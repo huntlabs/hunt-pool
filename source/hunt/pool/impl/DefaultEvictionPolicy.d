@@ -36,11 +36,11 @@ import hunt.pool.PooledObject;
  * @param <T> the type of objects in the pool
  *
  */
-class DefaultEvictionPolicy!(T) implements EvictionPolicy!(T) {
+class DefaultEvictionPolicy(T) : EvictionPolicy!(T) {
 
     override
-    boolean evict(final EvictionConfig config, final PooledObject!(T) underTest,
-            final int idleCount) {
+    bool evict(EvictionConfig config, PooledObject!(T) underTest,
+            int idleCount) {
 
         if ((config.getIdleSoftEvictTime() < underTest.getIdleTimeMillis() &&
                 config.getMinIdle() < idleCount) ||

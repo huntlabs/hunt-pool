@@ -29,7 +29,7 @@ module hunt.pool.BasePooledObjectFactory;
  * @see BaseKeyedPooledObjectFactory
  *
  */
-abstract class BasePooledObjectFactory!(T) extends BaseObject implements PooledObjectFactory!(T) {
+abstract class BasePooledObjectFactory(T) : BaseObject, PooledObjectFactory!(T) {
     /**
      * Creates an object instance, to be wrapped in a {@link PooledObject}.
      * <p>This method <strong>must</strong> support concurrent, multi-threaded
@@ -63,7 +63,7 @@ abstract class BasePooledObjectFactory!(T) extends BaseObject implements PooledO
      *  @param p ignored
      */
     override
-    void destroyObject(final PooledObject!(T) p)
+    void destroyObject(PooledObject!(T) p)
 {
         // The default implementation is a no-op.
     }
@@ -76,7 +76,7 @@ abstract class BasePooledObjectFactory!(T) extends BaseObject implements PooledO
      * @return {@code true}
      */
     override
-    boolean validateObject(final PooledObject!(T) p) {
+    bool validateObject(PooledObject!(T) p) {
         return true;
     }
 
@@ -86,7 +86,7 @@ abstract class BasePooledObjectFactory!(T) extends BaseObject implements PooledO
      *  @param p ignored
      */
     override
-    void activateObject(final PooledObject!(T) p){
+    void activateObject(PooledObject!(T) p){
         // The default implementation is a no-op.
     }
 
@@ -96,7 +96,7 @@ abstract class BasePooledObjectFactory!(T) extends BaseObject implements PooledO
      * @param p ignored
      */
     override
-    void passivateObject(final PooledObject!(T) p)
+    void passivateObject(PooledObject!(T) p)
 {
         // The default implementation is a no-op.
     }

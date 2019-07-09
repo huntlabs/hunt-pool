@@ -26,9 +26,9 @@ module hunt.pool.impl.EvictionConfig;
  */
 class EvictionConfig {
 
-    private final long idleEvictTime;
-    private final long idleSoftEvictTime;
-    private final int minIdle;
+    private long idleEvictTime;
+    private long idleSoftEvictTime;
+    private int minIdle;
 
     /**
      * Create a new eviction configuration with the specified parameters.
@@ -42,8 +42,8 @@ class EvictionConfig {
      *        {@link GenericObjectPool#getMinIdle()} or
      *        {@link GenericKeyedObjectPool#getMinIdlePerKey()}
      */
-    EvictionConfig(final long poolIdleEvictTime, final long poolIdleSoftEvictTime,
-            final int minIdle) {
+    this(long poolIdleEvictTime, long poolIdleSoftEvictTime,
+            int minIdle) {
         if (poolIdleEvictTime > 0) {
             idleEvictTime = poolIdleEvictTime;
         } else {
@@ -98,8 +98,8 @@ class EvictionConfig {
     /**
      */
     override
-    String toString() {
-        final StringBuilder builder = new StringBuilder();
+    string toString() {
+        StringBuilder builder = new StringBuilder();
         builder.append("EvictionConfig [idleEvictTime=");
         builder.append(idleEvictTime);
         builder.append(", idleSoftEvictTime=");

@@ -16,7 +16,9 @@
  */
 module hunt.pool.impl.GenericObjectPoolMXBean;
 
-import java.util.Set;
+import hunt.pool.impl.DefaultPooledObjectInfo;
+
+import hunt.collection.Set;
 
 /**
  * Defines the methods that will be made available via JMX.
@@ -37,19 +39,19 @@ interface GenericObjectPoolMXBean {
      * See {@link GenericObjectPool#getBlockWhenExhausted()}
      * @return See {@link GenericObjectPool#getBlockWhenExhausted()}
      */
-    boolean getBlockWhenExhausted();
+    bool getBlockWhenExhausted();
 
     /**
      * See {@link GenericObjectPool#getLifo()}
      * @return See {@link GenericObjectPool#getLifo()}
      */
-    boolean getFairness();
+    bool getFairness();
 
     /**
      * See {@link GenericObjectPool#getFairness()}
      * @return See {@link GenericObjectPool#getFairness()}
      */
-    boolean getLifo();
+    bool getLifo();
 
     /**
      * See {@link GenericObjectPool#getMaxIdle()}
@@ -103,25 +105,25 @@ interface GenericObjectPoolMXBean {
      * See {@link GenericObjectPool#getTestOnCreate()}
      * @return See {@link GenericObjectPool#getTestOnCreate()}
      */
-    boolean getTestOnCreate();
+    bool getTestOnCreate();
 
     /**
      * See {@link GenericObjectPool#getTestOnBorrow()}
      * @return See {@link GenericObjectPool#getTestOnBorrow()}
      */
-    boolean getTestOnBorrow();
+    bool getTestOnBorrow();
 
     /**
      * See {@link GenericObjectPool#getTestOnReturn()}
      * @return See {@link GenericObjectPool#getTestOnReturn()}
      */
-    boolean getTestOnReturn();
+    bool getTestOnReturn();
 
     /**
      * See {@link GenericObjectPool#getTestWhileIdle()}
      * @return See {@link GenericObjectPool#getTestWhileIdle()}
      */
-    boolean getTestWhileIdle();
+    bool getTestWhileIdle();
 
     /**
      * See {@link GenericObjectPool#getTimeBetweenEvictionRunsMillis()}
@@ -133,7 +135,7 @@ interface GenericObjectPoolMXBean {
      * See {@link GenericObjectPool#isClosed()}
      * @return See {@link GenericObjectPool#isClosed()}
      */
-    boolean isClosed();
+    bool isClosed();
 
     // Getters for monitoring attributes
 
@@ -201,7 +203,7 @@ interface GenericObjectPoolMXBean {
      * See {@link GenericObjectPool#getCreationStackTrace()}
      * @return See {@link GenericObjectPool#getCreationStackTrace()}
      */
-    String getCreationStackTrace();
+    string getCreationStackTrace();
 
     /**
      * See {@link GenericObjectPool#getNumWaiters()}
@@ -215,25 +217,25 @@ interface GenericObjectPoolMXBean {
      * See {@link GenericObjectPool#isAbandonedConfig()}
      * @return See {@link GenericObjectPool#isAbandonedConfig()}
      */
-    boolean isAbandonedConfig();
+    bool isAbandonedConfig();
 
     /**
      * See {@link GenericObjectPool#getLogAbandoned()}
      * @return See {@link GenericObjectPool#getLogAbandoned()}
      */
-    boolean getLogAbandoned();
+    bool getLogAbandoned();
 
     /**
      * See {@link GenericObjectPool#getRemoveAbandonedOnBorrow()}
      * @return See {@link GenericObjectPool#getRemoveAbandonedOnBorrow()}
      */
-    boolean getRemoveAbandonedOnBorrow();
+    bool getRemoveAbandonedOnBorrow();
 
     /**
      * See {@link GenericObjectPool#getRemoveAbandonedOnMaintenance()}
      * @return See {@link GenericObjectPool#getRemoveAbandonedOnMaintenance()}
      */
-    boolean getRemoveAbandonedOnMaintenance();
+    bool getRemoveAbandonedOnMaintenance();
 
     /**
      * See {@link GenericObjectPool#getRemoveAbandonedTimeout()}
@@ -245,7 +247,7 @@ interface GenericObjectPoolMXBean {
      * See {@link GenericObjectPool#getFactoryType()}
      * @return See {@link GenericObjectPool#getFactoryType()}
      */
-    String getFactoryType();
+    string getFactoryType();
 
     /**
      * See {@link GenericObjectPool#listAllObjects()}

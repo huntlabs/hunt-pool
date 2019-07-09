@@ -73,7 +73,7 @@ module hunt.pool.KeyedPooledObjectFactory;
  * @param <V> Type of element managed by this factory.
  *
  */
-interface KeyedPooledObjectFactory!(K, V) {
+interface KeyedPooledObjectFactory(K, V) {
 
     /**
      * Create an instance that can be served by the pool and
@@ -121,7 +121,7 @@ interface KeyedPooledObjectFactory!(K, V) {
      * @return <code>false</code> if <code>obj</code> is not valid and should
      *         be dropped from the pool, <code>true</code> otherwise.
      */
-    boolean validateObject(K key, PooledObject!(V) p);
+    bool validateObject(K key, PooledObject!(V) p);
 
     /**
      * Reinitialize an instance to be returned by the pool.

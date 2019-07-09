@@ -16,6 +16,8 @@
  */
 module hunt.pool.BaseObject;
 
+import hunt.text.StringBuilder;
+
 /**
  * A base class for common functionality.
  *
@@ -23,8 +25,8 @@ module hunt.pool.BaseObject;
 abstract class BaseObject {
 
     override
-    String toString() {
-        final StringBuilder builder = new StringBuilder();
+    string toString() {
+        StringBuilder builder = new StringBuilder();
         builder.append(getClass().getSimpleName());
         builder.append(" [");
         toStringAppendFields(builder);
@@ -38,7 +40,7 @@ abstract class BaseObject {
      *
      * @param builder Field names and values are appended to this object
      */
-    protected void toStringAppendFields(final StringBuilder builder) {
+    protected void toStringAppendFields(StringBuilder builder) {
         // do nothing by default, needed for b/w compatibility.
     }
 }

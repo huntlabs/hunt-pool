@@ -16,8 +16,8 @@
  */
 module hunt.pool.ObjectPool;
 
-import java.io.Closeable;
-import java.util.NoSuchElementException;
+import hunt.util.Common;
+import hunt.Exceptions;
 
 /**
  * A pooling simple interface.
@@ -56,7 +56,7 @@ import java.util.NoSuchElementException;
  * @see BaseObjectPool
  *
  */
-interface ObjectPool!(T) extends Closeable {
+interface ObjectPool(T) : Closeable {
 
     /**
      * Obtains an instance from this pool.
@@ -89,8 +89,7 @@ interface ObjectPool!(T) extends Closeable {
      *              when the pool is exhausted and cannot or will not return
      *              another instance.
      */
-    T borrowObject()NoSuchElementException,
-            IllegalStateException;
+    T borrowObject();
 
     /**
      * Returns an instance to the pool. By contract, <code>obj</code>
@@ -141,8 +140,7 @@ interface ObjectPool!(T) extends Closeable {
      * @throws UnsupportedOperationException
      *              when this pool cannot add new idle objects.
      */
-    void addObject()IllegalStateException,
-            UnsupportedOperationException;
+    void addObject();
 
     /**
      * Returns the number of instances currently idle in this pool. This may be

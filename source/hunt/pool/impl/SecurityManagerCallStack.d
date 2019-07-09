@@ -16,14 +16,18 @@
  */
 module hunt.pool.impl.SecurityManagerCallStack;
 
-import java.io.PrintWriter;
-import java.lang.ref.WeakReference;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.List;
+import hunt.pool.impl.CallStack;
+
+// import java.io.PrintWriter;
+// import java.lang.ref.WeakReference;
+// import java.security.AccessController;
+// import java.security.PrivilegedAction;
+// import java.text.DateFormat;
+// import java.text.SimpleDateFormat;
+// import java.util.ArrayList;
+// import java.util.List;
+
+import hunt.collection;
 
 /**
  * CallStack strategy using a {@link SecurityManager}. Obtaining the current call stack is much faster via a
@@ -35,12 +39,12 @@ import java.util.List;
  */
 class SecurityManagerCallStack : CallStack {
 
-    private final String messageFormat;
+    private string messageFormat;
     //@GuardedBy("dateFormat")
-    private final DateFormat dateFormat;
-    private final PrivateSecurityManager securityManager;
+    // private DateFormat dateFormat;
+    // private PrivateSecurityManager securityManager;
 
-    private volatile Snapshot snapshot;
+    // private Snapshot snapshot;
 
     /**
      * Create a new instance.
@@ -48,81 +52,81 @@ class SecurityManagerCallStack : CallStack {
      * @param messageFormat message format
      * @param useTimestamp whether to format the dates in the output message or not
      */
-    SecurityManagerCallStack(final String messageFormat, final boolean useTimestamp) {
+    this(string messageFormat, bool useTimestamp) {
         this.messageFormat = messageFormat;
-        this.dateFormat = useTimestamp ? new SimpleDateFormat(messageFormat) : null;
-        this.securityManager = AccessController.doPrivileged(new PrivilegedAction!(PrivateSecurityManager)() {
-            override
-            PrivateSecurityManager run() {
-                return new PrivateSecurityManager();
-            }
-        });
+        // this.dateFormat = useTimestamp ? new SimpleDateFormat(messageFormat) : null;
+        // this.securityManager = AccessController.doPrivileged(new PrivilegedAction!(PrivateSecurityManager)() {
+        //     override
+        //     PrivateSecurityManager run() {
+        //         return new PrivateSecurityManager();
+        //     }
+        // });
     }
 
-    override
-    boolean printStackTrace(final PrintWriter writer) {
-        final Snapshot snapshotRef = this.snapshot;
-        if (snapshotRef == null) {
-            return false;
-        }
-        final String message;
-        if (dateFormat == null) {
-            message = messageFormat;
-        } else {
-            synchronized (dateFormat) {
-                message = dateFormat.format(Long.valueOf(snapshotRef.timestamp));
-            }
-        }
-        writer.println(message);
-        for (final WeakReference<Class<?>> reference : snapshotRef.stack) {
-            writer.println(reference.get());
-        }
-        return true;
-    }
+    // override
+    // bool printStackTrace(PrintWriter writer) {
+    //     Snapshot snapshotRef = this.snapshot;
+    //     if (snapshotRef is null) {
+    //         return false;
+    //     }
+    //     string message;
+    //     if (dateFormat is null) {
+    //         message = messageFormat;
+    //     } else {
+    //         synchronized (dateFormat) {
+    //             message = dateFormat.format(Long.valueOf(snapshotRef.timestamp));
+    //         }
+    //     }
+    //     writer.println(message);
+    //     for (WeakReference<Class<?>> reference : snapshotRef.stack) {
+    //         writer.println(reference.get());
+    //     }
+    //     return true;
+    // }
 
     override
     void fillInStackTrace() {
-        snapshot = new Snapshot(securityManager.getCallStack());
+        // snapshot = new Snapshot(securityManager.getCallStack());
     }
 
     override
     void clear() {
-        snapshot = null;
+        // snapshot = null;
     }
 
     /**
      * A custom security manager.
      */
-    private static class PrivateSecurityManager : SecurityManager {
-        /**
-         * Get the class stack.
-         *
-         * @return class stack
-         */
-        private List<WeakReference<Class<?>>> getCallStack() {
-            final Class<?>[] classes = getClassContext();
-            final List<WeakReference<Class<?>>> stack = new ArrayList<>(classes.length);
-            for (final Class<?> klass : classes) {
-                stack.add(new WeakReference<Class<?>>(klass));
-            }
-            return stack;
-        }
-    }
+    // private static class PrivateSecurityManager : SecurityManager {
+    //     /**
+    //      * Get the class stack.
+    //      *
+    //      * @return class stack
+    //      */
+    //     private List<WeakReference<Class<?>>> getCallStack() {
+    //         Class<?>[] classes = getClassContext();
+    //         List<WeakReference<Class<?>>> stack = new ArrayList<>(classes.length);
+    //         for (Class<?> klass : classes) {
+    //             stack.add(new WeakReference<Class<?>>(klass));
+    //         }
+    //         return stack;
+    //     }
+    // }
 
     /**
      * A snapshot of a class stack.
      */
-    private static class Snapshot {
-        private final long timestamp = DateTimeHelper.currentTimeMillis()();
-        private final List<WeakReference<Class<?>>> stack;
+    // private static class Snapshot {
+    //     private long timestamp = DateTimeHelper.currentTimeMillis()();
+    //     private List<WeakReference<Class<?>>> stack;
 
-        /**
-         * Create a new snapshot with a class stack.
-         *
-         * @param stack class stack
-         */
-        private Snapshot(final List<WeakReference<Class<?>>> stack) {
-            this.stack = stack;
-        }
-    }
+    //     /**
+    //      * Create a new snapshot with a class stack.
+    //      *
+    //      * @param stack class stack
+    //      */
+    //     private Snapshot(List<WeakReference<Class<?>>> stack) {
+    //         this.stack = stack;
+    //     }
+    // }
 }

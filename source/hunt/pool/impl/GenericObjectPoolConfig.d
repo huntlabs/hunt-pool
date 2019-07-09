@@ -27,7 +27,7 @@ module hunt.pool.impl.GenericObjectPoolConfig;
  *
  * @param <T> Type of element pooled.
  */
-class GenericObjectPoolConfig!(T) extends BaseObjectPoolConfig!(T) {
+class GenericObjectPoolConfig(T) : BaseObjectPoolConfig!(T) {
 
     /**
      * The default value for the {@code maxTotal} configuration attribute.
@@ -76,7 +76,7 @@ class GenericObjectPoolConfig!(T) extends BaseObjectPoolConfig!(T) {
      *
      * @see GenericObjectPool#setMaxTotal(int)
      */
-    void setMaxTotal(final int maxTotal) {
+    void setMaxTotal(int maxTotal) {
         this.maxTotal = maxTotal;
     }
 
@@ -103,7 +103,7 @@ class GenericObjectPoolConfig!(T) extends BaseObjectPoolConfig!(T) {
      *
      * @see GenericObjectPool#setMaxIdle(int)
      */
-    void setMaxIdle(final int maxIdle) {
+    void setMaxIdle(int maxIdle) {
         this.maxIdle = maxIdle;
     }
 
@@ -130,22 +130,21 @@ class GenericObjectPoolConfig!(T) extends BaseObjectPoolConfig!(T) {
      *
      * @see GenericObjectPool#setMinIdle(int)
      */
-    void setMinIdle(final int minIdle) {
+    void setMinIdle(int minIdle) {
         this.minIdle = minIdle;
     }
 
-    @SuppressWarnings("unchecked")
     override
     GenericObjectPoolConfig!(T) clone() {
         try {
-            return (GenericObjectPoolConfig!(T)) super.clone();
-        } catch (final CloneNotSupportedException e) {
+            return cast(GenericObjectPoolConfig!(T)) super.clone();
+        } catch (CloneNotSupportedException e) {
             throw new AssertionError(); // Can't happen
         }
     }
 
     override
-    protected void toStringAppendFields(final StringBuilder builder) {
+    protected void toStringAppendFields(StringBuilder builder) {
         super.toStringAppendFields(builder);
         builder.append(", maxTotal=");
         builder.append(maxTotal);

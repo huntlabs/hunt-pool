@@ -69,7 +69,7 @@ module hunt.pool.PooledObjectFactory;
  * @see ObjectPool
  *
  */
-interface PooledObjectFactory!(T) {
+interface PooledObjectFactory(T) {
 
   /**
    * Creates an instance that can be served by the pool and wrap it in a
@@ -112,7 +112,7 @@ interface PooledObjectFactory!(T) {
    * @return <code>false</code> if <code>obj</code> is not valid and should
    *         be dropped from the pool, <code>true</code> otherwise.
    */
-  boolean validateObject(PooledObject!(T) p);
+  bool validateObject(PooledObject!(T) p);
 
   /**
    * Reinitializes an instance to be returned by the pool.

@@ -16,8 +16,8 @@
  */
 module hunt.pool.KeyedObjectPool;
 
-import java.io.Closeable;
-import java.util.NoSuchElementException;
+import hunt.util.Common;
+import hunt.Exceptions;
 
 /**
  * A "keyed" pooling interface.
@@ -64,7 +64,7 @@ import java.util.NoSuchElementException;
  * @see hunt.pool.impl.GenericKeyedObjectPool GenericKeyedObjectPool
  *
  */
-interface KeyedObjectPool!(K, V) extends Closeable {
+interface KeyedObjectPool(K, V) : Closeable {
     /**
      * Obtains an instance from this pool for the specified <code>key</code>.
      * <p>
@@ -160,8 +160,7 @@ interface KeyedObjectPool!(K, V) extends Closeable {
      * @throws UnsupportedOperationException
      *              when this pool cannot add new idle objects.
      */
-    void addObject(K key)IllegalStateException,
-            UnsupportedOperationException;
+    void addObject(K key);
 
     /**
      * Returns the number of instances corresponding to the given

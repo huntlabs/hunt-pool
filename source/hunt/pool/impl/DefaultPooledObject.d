@@ -20,8 +20,10 @@ import hunt.pool.PooledObject;
 import hunt.pool.PooledObjectState;
 import hunt.pool.TrackedUse;
 
-import java.io.PrintWriter;
-import java.util.Deque;
+import std.algorithm;
+
+// import java.io.PrintWriter;
+// import java.util.Deque;
 
 /**
  * This wrapper is used to track the additional information, such as state, for
@@ -33,18 +35,18 @@ import java.util.Deque;
  * @param <T> the type of object in the pool
  *
  */
-class DefaultPooledObject!(T) implements PooledObject!(T) {
+class DefaultPooledObject(T) : PooledObject!(T) {
 
-    private final T object;
+    private T object;
     private PooledObjectState state = PooledObjectState.IDLE; // @GuardedBy("this") to ensure transitions are valid
-    private final long createTime = DateTimeHelper.currentTimeMillis()();
-    private volatile long lastBorrowTime = createTime;
-    private volatile long lastUseTime = createTime;
-    private volatile long lastReturnTime = createTime;
-    private volatile boolean logAbandoned = false;
-    private volatile CallStack borrowedBy = NoOpCallStack.INSTANCE;
-    private volatile CallStack usedBy = NoOpCallStack.INSTANCE;
-    private volatile long borrowedCount = 0;
+    private long createTime; // = DateTimeHelper.currentTimeMillis();
+    private shared long lastBorrowTime; 
+    private shared long lastUseTime;
+    private shared long lastReturnTime;
+    private shared bool logAbandoned = false;
+    private shared CallStack borrowedBy;
+    private shared CallStack usedBy;
+    private shared long borrowedCount = 0;
 
     /**
      * Create a new instance that wraps the provided object so that the pool can
@@ -52,7 +54,13 @@ class DefaultPooledObject!(T) implements PooledObject!(T) {
      *
      * @param object The object to wrap
      */
-    DefaultPooledObject(final T object) {
+    this(T object) {
+        createTime = DateTimeHelper.currentTimeMillis();
+        lastBorrowTime = createTime;
+        lastUseTime = createTime;
+        lastReturnTime = createTime;
+        borrowedBy = NoOpCallStack.INSTANCE;    
+        usedBy = NoOpCallStack.INSTANCE;    
         this.object = object;
     }
 
@@ -69,8 +77,8 @@ class DefaultPooledObject!(T) implements PooledObject!(T) {
     override
     long getActiveTimeMillis() {
         // Take copies to avoid threading issues
-        final long rTime = lastReturnTime;
-        final long bTime = lastBorrowTime;
+        long rTime = lastReturnTime;
+        long bTime = lastBorrowTime;
 
         if (rTime > bTime) {
             return rTime - bTime;
@@ -80,7 +88,7 @@ class DefaultPooledObject!(T) implements PooledObject!(T) {
 
     override
     long getIdleTimeMillis() {
-        final long elapsed = DateTimeHelper.currentTimeMillis()() - lastReturnTime;
+        long elapsed = DateTimeHelper.currentTimeMillis()() - lastReturnTime;
         // elapsed may be negative if:
         // - another thread updates lastReturnTime during the calculation window
         // - DateTimeHelper.currentTimeMillis()() is not monotonic (e.g. system time is set back)
@@ -116,29 +124,31 @@ class DefaultPooledObject!(T) implements PooledObject!(T) {
      */
     override
     long getLastUsedTime() {
-        if (object instanceof TrackedUse) {
-            return Math.max(((TrackedUse) object).getLastUsed(), lastUseTime);
+        TrackedUse tu = cast(TrackedUse) object;
+        if (tu !is null) {
+            return max(tu.getLastUsed(), lastUseTime);
         }
         return lastUseTime;
     }
 
     override
-    int compareTo(final PooledObject!(T) other) {
-        final long lastActiveDiff = this.getLastReturnTime() - other.getLastReturnTime();
+    int compareTo(PooledObject!(T) other) {
+        long lastActiveDiff = this.getLastReturnTime() - other.getLastReturnTime();
         if (lastActiveDiff == 0) {
             // Make sure the natural ordering is broadly consistent with equals
             // although this will break down if distinct objects have the same
             // identity hash code.
             // see java.lang.Comparable Javadocs
-            return System.identityHashCode(this) - System.identityHashCode(other);
+            // return System.identityHashCode(this) - System.identityHashCode(other);
+            return cast(int)(this.toHash() - other.toHash());
         }
         // handle int overflow
-        return (int)Math.min(Math.max(lastActiveDiff, Integer.MIN_VALUE), Integer.MAX_VALUE);
+        return cast(int)min(max(lastActiveDiff, Integer.MIN_VALUE), Integer.MAX_VALUE);
     }
 
     override
-    String toString() {
-        final StringBuilder result = new StringBuilder();
+    string toString() {
+        StringBuilder result = new StringBuilder();
         result.append("Object: ");
         result.append(object.toString());
         result.append(", State: ");
@@ -150,7 +160,7 @@ class DefaultPooledObject!(T) implements PooledObject!(T) {
     }
 
     override
-    synchronized boolean startEvictionTest() {
+    synchronized bool startEvictionTest() {
         if (state == PooledObjectState.IDLE) {
             state = PooledObjectState.EVICTION;
             return true;
@@ -160,8 +170,8 @@ class DefaultPooledObject!(T) implements PooledObject!(T) {
     }
 
     override
-    synchronized boolean endEvictionTest(
-            final Deque!(PooledObject!(T)) idleQueue) {
+    synchronized bool endEvictionTest(
+            Deque!(PooledObject!(T)) idleQueue) {
         if (state == PooledObjectState.EVICTION) {
             state = PooledObjectState.IDLE;
             return true;
@@ -181,7 +191,7 @@ class DefaultPooledObject!(T) implements PooledObject!(T) {
      * @return {@code true} if the original state was {@link PooledObjectState#IDLE IDLE}
      */
     override
-    synchronized boolean allocate() {
+    synchronized bool allocate() {
         if (state == PooledObjectState.IDLE) {
             state = PooledObjectState.ALLOCATED;
             lastBorrowTime = DateTimeHelper.currentTimeMillis()();
@@ -208,7 +218,7 @@ class DefaultPooledObject!(T) implements PooledObject!(T) {
      * @return {@code true} if the state was {@link PooledObjectState#ALLOCATED ALLOCATED}
      */
     override
-    synchronized boolean deallocate() {
+    synchronized bool deallocate() {
         if (state == PooledObjectState.ALLOCATED ||
                 state == PooledObjectState.RETURNING) {
             state = PooledObjectState.IDLE;
@@ -235,8 +245,8 @@ class DefaultPooledObject!(T) implements PooledObject!(T) {
     }
 
     override
-    void printStackTrace(final PrintWriter writer) {
-        boolean written = borrowedBy.printStackTrace(writer);
+    void printStackTrace(PrintWriter writer) {
+        bool written = borrowedBy.printStackTrace(writer);
         written |= usedBy.printStackTrace(writer);
         if (written) {
             writer.flush();
@@ -269,7 +279,7 @@ class DefaultPooledObject!(T) implements PooledObject!(T) {
     }
 
     override
-    void setLogAbandoned(final boolean logAbandoned) {
+    void setLogAbandoned(bool logAbandoned) {
         this.logAbandoned = logAbandoned;
     }
 
@@ -284,8 +294,8 @@ class DefaultPooledObject!(T) implements PooledObject!(T) {
      */
     // TODO: uncomment below in 3.0
     // override
-    void setRequireFullStackTrace(final boolean requireFullStackTrace) {
-        borrowedBy = CallStackUtils.newCallStack("'Pooled object created' " +
+    void setRequireFullStackTrace(bool requireFullStackTrace) {
+        borrowedBy = CallStackUtils.newCallStack("'Pooled object created' " ~
             "yyyy-MM-dd HH:mm:ss Z 'by the following code has not been returned to the pool:'",
             true, requireFullStackTrace);
         usedBy = CallStackUtils.newCallStack("The last code to use this object was:",

@@ -20,7 +20,7 @@ module hunt.pool.impl.AbandonedConfig;
 import hunt.pool.TrackedUse;
 import hunt.pool.UsageTracking;
 
-import java.io.PrintWriter;
+// import java.io.PrintWriter;
 
 /**
  * Configuration settings for abandoned object removal.
@@ -31,7 +31,7 @@ class AbandonedConfig {
     /**
      * Whether or not borrowObject performs abandoned object removal.
      */
-    private boolean removeAbandonedOnBorrow = false;
+    private bool removeAbandonedOnBorrow = false;
 
     /**
      * <p>Flag to remove abandoned objects if they exceed the
@@ -45,7 +45,7 @@ class AbandonedConfig {
      *
      * @return true if abandoned objects are to be removed by borrowObject
      */
-    boolean getRemoveAbandonedOnBorrow() {
+    bool getRemoveAbandonedOnBorrow() {
         return this.removeAbandonedOnBorrow;
     }
 
@@ -57,7 +57,7 @@ class AbandonedConfig {
      *   removed by borrowObject
      * @see #getRemoveAbandonedOnBorrow()
      */
-    void setRemoveAbandonedOnBorrow(final boolean removeAbandonedOnBorrow) {
+    void setRemoveAbandonedOnBorrow(bool removeAbandonedOnBorrow) {
         this.removeAbandonedOnBorrow = removeAbandonedOnBorrow;
     }
 
@@ -65,7 +65,7 @@ class AbandonedConfig {
      * Whether or not pool maintenance (evictor) performs abandoned object
      * removal.
      */
-    private boolean removeAbandonedOnMaintenance = false;
+    private bool removeAbandonedOnMaintenance = false;
 
     /**
      * <p>Flag to remove abandoned objects if they exceed the
@@ -82,7 +82,7 @@ class AbandonedConfig {
      *
      * @return true if abandoned objects are to be removed by the evictor
      */
-    boolean getRemoveAbandonedOnMaintenance() {
+    bool getRemoveAbandonedOnMaintenance() {
         return this.removeAbandonedOnMaintenance;
     }
 
@@ -94,7 +94,7 @@ class AbandonedConfig {
      *   removed by pool maintenance
      * @see #getRemoveAbandonedOnMaintenance
      */
-    void setRemoveAbandonedOnMaintenance(final boolean removeAbandonedOnMaintenance) {
+    void setRemoveAbandonedOnMaintenance(bool removeAbandonedOnMaintenance) {
         this.removeAbandonedOnMaintenance = removeAbandonedOnMaintenance;
     }
 
@@ -130,7 +130,7 @@ class AbandonedConfig {
      * @param removeAbandonedTimeout new abandoned timeout in seconds
      * @see #getRemoveAbandonedTimeout()
      */
-    void setRemoveAbandonedTimeout(final int removeAbandonedTimeout) {
+    void setRemoveAbandonedTimeout(int removeAbandonedTimeout) {
         this.removeAbandonedTimeout = removeAbandonedTimeout;
     }
 
@@ -138,7 +138,7 @@ class AbandonedConfig {
      * Determines whether or not to log stack traces for application code
      * which abandoned an object.
      */
-    private boolean logAbandoned = false;
+    private bool logAbandoned = false;
 
     /**
      * Flag to log stack traces for application code which abandoned
@@ -148,11 +148,11 @@ class AbandonedConfig {
      * Logging of abandoned objects adds overhead for every object created
      * because a stack trace has to be generated.
      *
-     * @return boolean true if stack trace logging is turned on for abandoned
+     * @return bool true if stack trace logging is turned on for abandoned
      * objects
      *
      */
-    boolean getLogAbandoned() {
+    bool getLogAbandoned() {
         return this.logAbandoned;
     }
 
@@ -164,7 +164,7 @@ class AbandonedConfig {
      * @see #getLogAbandoned()
      *
      */
-    void setLogAbandoned(final boolean logAbandoned) {
+    void setLogAbandoned(bool logAbandoned) {
         this.logAbandoned = logAbandoned;
     }
 
@@ -174,7 +174,7 @@ class AbandonedConfig {
      * may be used if possible.
      *
      */
-    private boolean requireFullStackTrace = true;
+    private bool requireFullStackTrace = true;
 
     /**
      * Indicates if full stack traces are required when {@link #getLogAbandoned() logAbandoned}
@@ -186,7 +186,7 @@ class AbandonedConfig {
      * if abbreviated stack traces are acceptable
      * @see CallStack
      */
-    boolean getRequireFullStackTrace() {
+    bool getRequireFullStackTrace() {
         return requireFullStackTrace;
     }
 
@@ -198,7 +198,7 @@ class AbandonedConfig {
      * @see CallStack
      * @see #getRequireFullStackTrace()
      */
-    void setRequireFullStackTrace(final boolean requireFullStackTrace) {
+    void setRequireFullStackTrace(bool requireFullStackTrace) {
         this.requireFullStackTrace = requireFullStackTrace;
     }
 
@@ -206,7 +206,7 @@ class AbandonedConfig {
      * PrintWriter to use to log information on abandoned objects.
      * Use of default system encoding is deliberate.
      */
-    private PrintWriter logWriter = new PrintWriter(System.out);
+    // private PrintWriter logWriter = new PrintWriter(System.out);
 
     /**
      * Returns the log writer being used by this configuration to log
@@ -215,9 +215,9 @@ class AbandonedConfig {
      *
      * @return log writer in use
      */
-    PrintWriter getLogWriter() {
-        return logWriter;
-    }
+    // PrintWriter getLogWriter() {
+    //     return logWriter;
+    // }
 
     /**
      * Sets the log writer to be used by this configuration to log
@@ -225,16 +225,16 @@ class AbandonedConfig {
      *
      * @param logWriter The new log writer
      */
-    void setLogWriter(final PrintWriter logWriter) {
-        this.logWriter = logWriter;
-    }
+    // void setLogWriter(PrintWriter logWriter) {
+    //     this.logWriter = logWriter;
+    // }
 
     /**
      * If the pool implements {@link UsageTracking}, should the pool record a
      * stack trace every time a method is called on a pooled object and retain
      * the most recent stack trace to aid debugging of abandoned objects?
      */
-    private boolean useUsageTracking = false;
+    private bool useUsageTracking = false;
 
     /**
      * If the pool implements {@link UsageTracking}, should the pool record a
@@ -243,7 +243,7 @@ class AbandonedConfig {
      *
      * @return <code>true</code> if usage tracking is enabled
      */
-    boolean getUseUsageTracking() {
+    bool getUseUsageTracking() {
         return useUsageTracking;
     }
 
@@ -257,15 +257,15 @@ class AbandonedConfig {
      *                              the recording of a stack trace on every use
      *                              of a pooled object
      */
-    void setUseUsageTracking(final boolean useUsageTracking) {
+    void setUseUsageTracking(bool useUsageTracking) {
         this.useUsageTracking = useUsageTracking;
     }
 
     /**
      */
     override
-    String toString() {
-        final StringBuilder builder = new StringBuilder();
+    string toString() {
+        StringBuilder builder = new StringBuilder();
         builder.append("AbandonedConfig [removeAbandonedOnBorrow=");
         builder.append(removeAbandonedOnBorrow);
         builder.append(", removeAbandonedOnMaintenance=");

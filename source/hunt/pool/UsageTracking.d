@@ -26,7 +26,7 @@ module hunt.pool.UsageTracking;
  * @param <T>   The type of object provided by the pool.
  *
  */
-interface UsageTracking!(T) {
+interface UsageTracking(T) {
 
     /**
      * This method is called every time a pooled object is used to enable the pool to
