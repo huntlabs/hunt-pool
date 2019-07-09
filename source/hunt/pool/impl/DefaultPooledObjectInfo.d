@@ -22,6 +22,7 @@ import hunt.pool.impl.DefaultPooledObjectInfoMBean;
 // import java.text.SimpleDateFormat;
 
 import hunt.Exceptions;
+import hunt.text.StringBuilder;
 
 import hunt.pool.PooledObject;
 
@@ -50,8 +51,11 @@ class DefaultPooledObjectInfo : DefaultPooledObjectInfoMBean {
 
     override
     string getCreateTimeFormatted() {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
-        return sdf.format(Long.valueOf(pooledObject.getCreateTime()));
+        // SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
+        // return sdf.format(Long.valueOf(pooledObject.getCreateTime()));
+        
+        implementationMissing(false);
+        return "";
     }
 
     override
@@ -61,15 +65,20 @@ class DefaultPooledObjectInfo : DefaultPooledObjectInfoMBean {
 
     override
     string getLastBorrowTimeFormatted() {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
-        return sdf.format(Long.valueOf(pooledObject.getLastBorrowTime()));
+        // SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
+        // return sdf.format(Long.valueOf(pooledObject.getLastBorrowTime()));
+        
+        implementationMissing(false);
+        return "";
     }
 
     override
     string getLastBorrowTrace() {
-        StringWriter sw = new StringWriter();
-        pooledObject.printStackTrace(new PrintWriter(sw));
-        return sw.toString();
+        // StringWriter sw = new StringWriter();
+        // pooledObject.printStackTrace(new PrintWriter(sw));
+        // return sw.toString();
+        implementationMissing(false);
+        return "";
     }
 
     override
@@ -79,13 +88,16 @@ class DefaultPooledObjectInfo : DefaultPooledObjectInfoMBean {
 
     override
     string getLastReturnTimeFormatted() {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
-        return sdf.format(Long.valueOf(pooledObject.getLastReturnTime()));
+        // SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
+        // return sdf.format(Long.valueOf(pooledObject.getLastReturnTime()));
+        
+        implementationMissing(false);
+        return "";
     }
 
     override
     string getPooledObjectType() {
-        return pooledObject.getObject().getClass().getName();
+        return typeid(pooledObject.getObject()).name;
     }
 
     override
@@ -109,7 +121,7 @@ class DefaultPooledObjectInfo : DefaultPooledObjectInfoMBean {
     string toString() {
         StringBuilder builder = new StringBuilder();
         builder.append("DefaultPooledObjectInfo [pooledObject=");
-        builder.append(pooledObject);
+        builder.append(pooledObject.toString());
         builder.append("]");
         return builder.toString();
     }

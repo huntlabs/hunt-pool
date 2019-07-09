@@ -19,6 +19,7 @@ module hunt.pool.impl.AbandonedConfig;
 
 import hunt.pool.TrackedUse;
 import hunt.pool.UsageTracking;
+import hunt.text.StringBuilder;
 
 // import java.io.PrintWriter;
 
@@ -274,8 +275,8 @@ class AbandonedConfig {
         builder.append(removeAbandonedTimeout);
         builder.append(", logAbandoned=");
         builder.append(logAbandoned);
-        builder.append(", logWriter=");
-        builder.append(logWriter);
+        // builder.append(", logWriter=");
+        // builder.append(logWriter);
         builder.append(", useUsageTracking=");
         builder.append(useUsageTracking);
         builder.append("]");

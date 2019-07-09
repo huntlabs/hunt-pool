@@ -28,10 +28,19 @@ module hunt.pool.PoolUtils;
 // import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 // import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
+import hunt.concurrency.Executors;
+import hunt.concurrency.ScheduledExecutorService;
+import hunt.concurrency.ScheduledThreadPoolExecutor;
+
 import hunt.collection;
 import hunt.Exceptions;
+import hunt.util.DateTime;
 
 import core.sync.rwmutex;
+
+import std.algorithm;
+import std.concurrency : initOnce;
+import std.conv;
 
 /**
  * This class consists exclusively of static methods that operate on or return
@@ -561,9 +570,12 @@ class PoolUtils {
      *
      * @return the {@link Timer} for checking keyedPool's idle count.
      */
-    private static Timer getMinIdleTimer() {
-        return TimerHolder.MIN_IDLE_TIMER;
+    private static ScheduledExecutorService getMinIdleTimer() {
+        // return TimerHolder.MIN_IDLE_TIMER;
+        __gshared ScheduledExecutorService inst;
+        return initOnce!inst(Executors.newScheduledThreadPool(1));
     }
+
 
     /**
      * Timer task that adds objects to the pool until the number of idle
@@ -1361,7 +1373,7 @@ class PoolUtils {
          */
         this(float factor) {
             this.factor = factor;
-            nextShrink = DateTimeHelper.currentTimeMillis()() + cast(long) (900000 * factor); // now
+            nextShrink = DateTimeHelper.currentTimeMillis() + cast(long) (900000 * factor); // now
                                                                                 // +
                                                                                 // 15
                                                                                 // min
@@ -1379,8 +1391,8 @@ class PoolUtils {
          *            number of idle elements in the pool
          */
         void update(long now, int numIdle) {
-            int idle = Math.max(0, numIdle);
-            idleHighWaterMark = Math.max(idle, idleHighWaterMark);
+            int idle = max(0, numIdle);
+            idleHighWaterMark = max(idle, idleHighWaterMark);
             float maxInterval = 15f;
             float minutes = maxInterval +
                     ((1f - maxInterval) / idleHighWaterMark) * idle;
@@ -1401,8 +1413,8 @@ class PoolUtils {
          */
         override
         string toString() {
-            return "ErodingFactor{" ~ "factor=" ~ factor +
-                    ", idleHighWaterMark=" ~ idleHighWaterMark + '}';
+            return "ErodingFactor{" ~ "factor=" ~ factor.to!string() ~
+                    ", idleHighWaterMark=" ~ idleHighWaterMark.to!string() ~ "}";
         }
     }
 

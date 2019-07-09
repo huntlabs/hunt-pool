@@ -16,6 +16,9 @@
  */
 module hunt.pool.impl.EvictionConfig;
 
+import hunt.Long;
+import hunt.text.StringBuilder;
+
 /**
  * This class is used by pool implementations to pass configuration information
  * to {@link EvictionPolicy} instances. The {@link EvictionPolicy} may also have

@@ -25,6 +25,8 @@ import hunt.collection.Deque;
 
 interface IPooledObject {
 
+    Object getObject();
+
     /**
      * Obtains the time (using the same basis as
      * {@link DateTimeHelper.currentTimeMillis()()}) that this object was created.

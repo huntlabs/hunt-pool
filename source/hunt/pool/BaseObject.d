@@ -17,6 +17,7 @@
 module hunt.pool.BaseObject;
 
 import hunt.text.StringBuilder;
+import hunt.util.TypeUtils;
 
 /**
  * A base class for common functionality.
@@ -27,7 +28,8 @@ abstract class BaseObject {
     override
     string toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append(getClass().getSimpleName());
+        // builder.append(typeof(this).stringof);
+        builder.append(TypeUtils.getSimpleName(typeid(this)));
         builder.append(" [");
         toStringAppendFields(builder);
         builder.append("]");
