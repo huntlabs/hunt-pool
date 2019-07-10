@@ -80,6 +80,6 @@ module hunt.pool.impl.ThrowableCallStack;
 //      */
 //     private static class Snapshot : Throwable {
 
-//         private long timestamp = DateTimeHelper.currentTimeMillis()();
+//         private long timestamp = DateTimeHelper.currentTimeMillis();
 //     }
 // }

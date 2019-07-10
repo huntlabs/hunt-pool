@@ -16,6 +16,11 @@
  */
 module hunt.pool.impl.GenericObjectPoolConfig;
 
+import hunt.pool.impl.BaseObjectPoolConfig;
+
+import hunt.Exceptions;
+import hunt.text.StringBuilder;
+
 /**
  * A simple "struct" encapsulating the configuration for a
  * {@link GenericObjectPool}.
@@ -27,7 +32,7 @@ module hunt.pool.impl.GenericObjectPoolConfig;
  *
  * @param <T> Type of element pooled.
  */
-class GenericObjectPoolConfig(T) : BaseObjectPoolConfig!(T) {
+class GenericObjectPoolConfig : BaseObjectPoolConfig {
 
     /**
      * The default value for the {@code maxTotal} configuration attribute.
@@ -134,10 +139,11 @@ class GenericObjectPoolConfig(T) : BaseObjectPoolConfig!(T) {
         this.minIdle = minIdle;
     }
 
-    override
-    GenericObjectPoolConfig!(T) clone() {
+    // override
+    GenericObjectPoolConfig clone() {
+    // Object clone() {
         try {
-            return cast(GenericObjectPoolConfig!(T)) super.clone();
+            return cast(GenericObjectPoolConfig) super.clone();
         } catch (CloneNotSupportedException e) {
             throw new AssertionError(); // Can't happen
         }

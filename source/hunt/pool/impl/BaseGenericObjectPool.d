@@ -16,6 +16,12 @@
  */
 module hunt.pool.impl.BaseGenericObjectPool;
 
+import hunt.pool.impl.BaseObjectPoolConfig;
+import hunt.pool.impl.EvictionPolicy;
+import hunt.pool.impl.EvictionTimer;
+
+import hunt.pool.impl.GenericKeyedObjectPoolConfig;
+
 // import java.io.PrintWriter;
 // import java.io.StringWriter;
 // import java.io.Writer;
@@ -28,6 +34,7 @@ module hunt.pool.impl.BaseGenericObjectPool;
 // import java.util.TimerTask;
 import hunt.concurrency.Delayed;
 import hunt.concurrency.Future;
+import hunt.concurrency.atomic.AtomicHelper;
 // import java.util.concurrent.TimeUnit;
 // import java.util.concurrent.atomic.AtomicLong;
 
@@ -44,8 +51,15 @@ import hunt.pool.PooledObject;
 import hunt.pool.PooledObjectState;
 import hunt.pool.SwallowedExceptionListener;
 
-
+import hunt.collection;
 import hunt.Exceptions;
+import hunt.logging.ConsoleLogger;
+import hunt.text.StringBuilder;
+import hunt.util.Common;
+
+import core.time;
+import std.conv;
+import std.range;
 
 /**
  * Base class that provides common functionality for {@link GenericObjectPool}
@@ -57,7 +71,7 @@ import hunt.Exceptions;
  * This class is intended to be thread-safe.
  *
  */
-abstract class BaseGenericObjectPool(T) : BaseObject {
+abstract class BaseGenericObjectPool : BaseObject {
 
     // Constants
     /**
@@ -93,15 +107,15 @@ abstract class BaseGenericObjectPool(T) : BaseObject {
             BaseObjectPoolConfig.DEFAULT_MIN_EVICTABLE_IDLE_TIME_MILLIS;
     private shared long softMinEvictableIdleTimeMillis =
             BaseObjectPoolConfig.DEFAULT_SOFT_MIN_EVICTABLE_IDLE_TIME_MILLIS;
-    private shared EvictionPolicy!(T) evictionPolicy;
+    private EvictionPolicy evictionPolicy;
     private shared long evictorShutdownTimeoutMillis =
             BaseObjectPoolConfig.DEFAULT_EVICTOR_SHUTDOWN_TIMEOUT_MILLIS;
 
 
     // Internal (primarily state) attributes
-    Object closeLock = new Object();
+    Object closeLock;
     shared bool closed = false;
-    Object evictionLock = new Object();
+    Object evictionLock;
     private Evictor evictor = null; // @GuardedBy("evictionLock")
     EvictionIterator evictionIterator = null; // @GuardedBy("evictionLock")
     /*
@@ -110,23 +124,23 @@ abstract class BaseGenericObjectPool(T) : BaseObject {
      * visibility of the correct factory. See POOL-161. Uses a weak reference to
      * avoid potential memory leaks if the Pool is discarded rather than closed.
      */
-    private WeakReference!(ClassLoader) factoryClassLoader;
+    // private WeakReference!(ClassLoader) factoryClassLoader;
 
 
     // Monitoring (primarily JMX) attributes
-    private ObjectName objectName;
+    // private ObjectName objectName;
     private string creationStackTrace;
-    private AtomicLong borrowedCount = new AtomicLong(0);
-    private AtomicLong returnedCount = new AtomicLong(0);
-    AtomicLong createdCount = new AtomicLong(0);
-    AtomicLong destroyedCount = new AtomicLong(0);
-    AtomicLong destroyedByEvictorCount = new AtomicLong(0);
-    AtomicLong destroyedByBorrowValidationCount = new AtomicLong(0);
-    private StatsStore activeTimes = new StatsStore(MEAN_TIMING_STATS_CACHE_SIZE);
-    private StatsStore idleTimes = new StatsStore(MEAN_TIMING_STATS_CACHE_SIZE);
-    private StatsStore waitTimes = new StatsStore(MEAN_TIMING_STATS_CACHE_SIZE);
-    private AtomicLong maxBorrowWaitTimeMillis = new AtomicLong(0L);
-    private shared SwallowedExceptionListener swallowedExceptionListener = null;
+    private shared long borrowedCount = 0; // new AtomicLong(0);
+    private shared long returnedCount = 0; // new AtomicLong(0);
+    shared long createdCount = 0; // new AtomicLong(0);
+    shared long destroyedCount = 0; // new AtomicLong(0);
+    shared long destroyedByEvictorCount = 0; // new AtomicLong(0);
+    shared long destroyedByBorrowValidationCount = 0; // new AtomicLong(0);
+    private StatsStore activeTimes;
+    private StatsStore idleTimes;
+    private StatsStore waitTimes;
+    private shared long maxBorrowWaitTimeMillis = 0; // new AtomicLong(0L);
+    private SwallowedExceptionListener swallowedExceptionListener = null;
 
 
     /**
@@ -138,16 +152,24 @@ abstract class BaseGenericObjectPool(T) : BaseObject {
      *                      overridden by the config
      * @param jmxNamePrefix Prefix to be used for JMX name for the new pool
      */
-    this(BaseObjectPoolConfig!(T) config,
+    this(BaseObjectPoolConfig config,
             string jmxNameBase, string jmxNamePrefix) {
-        if (config.getJmxEnabled()) {
-            this.objectName = jmxRegister(config, jmxNameBase, jmxNamePrefix);
-        } else {
-            this.objectName = null;
-        }
+        
+        evictionLock = new Object();
+        closeLock = new Object();
+        activeTimes = new StatsStore(MEAN_TIMING_STATS_CACHE_SIZE);
+        idleTimes = new StatsStore(MEAN_TIMING_STATS_CACHE_SIZE);
+        waitTimes = new StatsStore(MEAN_TIMING_STATS_CACHE_SIZE);
+
+
+        // if (config.getJmxEnabled()) {
+        //     this.objectName = jmxRegister(config, jmxNameBase, jmxNamePrefix);
+        // } else {
+        //     this.objectName = null;
+        // }
 
         // Populate the creation stack trace
-        this.creationStackTrace = getStackTrace(new Exception());
+        this.creationStackTrace = getStackTrace(new Exception("default"));
 
         // save the current TCCL (if any) to be used later by the evictor Thread
         // ClassLoader cl = Thread.getThis().getContextClassLoader();
@@ -156,7 +178,7 @@ abstract class BaseGenericObjectPool(T) : BaseObject {
         // } else {
         //     factoryClassLoader = new WeakReference<>(cl);
         // }
-implementationMissing(false)        ;
+        implementationMissing(false);
 
         fairness = config.getFairness();
     }
@@ -221,7 +243,7 @@ implementationMissing(false)        ;
         this.blockWhenExhausted = blockWhenExhausted;
     }
 
-    protected void setConfig(BaseObjectPoolConfig!(T) conf) {
+    protected void setConfig(BaseObjectPoolConfig conf) {
         setLifo(conf.getLifo());
         setMaxWaitMillis(conf.getMaxWaitMillis());
         setBlockWhenExhausted(conf.getBlockWhenExhausted());
@@ -233,7 +255,7 @@ implementationMissing(false)        ;
         setMinEvictableIdleTimeMillis(conf.getMinEvictableIdleTimeMillis());
         setTimeBetweenEvictionRunsMillis(conf.getTimeBetweenEvictionRunsMillis());
         setSoftMinEvictableIdleTimeMillis(conf.getSoftMinEvictableIdleTimeMillis());
-        EvictionPolicy!(T) policy = conf.getEvictionPolicy();
+        EvictionPolicy policy = conf.getEvictionPolicy();
         if (policy is null) {
             // Use the class name (pre-2.6.0 compatible)
             setEvictionPolicyClassName(conf.getEvictionPolicyClassName());
@@ -625,7 +647,7 @@ implementationMissing(false)        ;
      * @param evictionPolicy
      *            the eviction policy for this pool.
      */
-    void setEvictionPolicy(EvictionPolicy!(T) evictionPolicy) {
+    void setEvictionPolicy(EvictionPolicy evictionPolicy) {
         this.evictionPolicy = evictionPolicy;
     }
 
@@ -681,7 +703,7 @@ implementationMissing(false)        ;
      *        {@link EvictionPolicy} interface.
      */
     void setEvictionPolicyClassName(string evictionPolicyClassName) {
-        // setEvictionPolicyClassName(evictionPolicyClassName, Thread.getThis()().getContextClassLoader());
+        // setEvictionPolicyClassName(evictionPolicyClassName, Thread.getThis().getContextClassLoader());
         implementationMissing(false);
     }
 
@@ -742,7 +764,7 @@ implementationMissing(false)        ;
      *
      * @since 2.6.0 Changed access from protected to public.
      */
-    EvictionPolicy!(T) getEvictionPolicy() {
+    EvictionPolicy getEvictionPolicy() {
         return evictionPolicy;
     }
 
@@ -768,7 +790,7 @@ implementationMissing(false)        ;
      */
     void startEvictor(long delay) {
         synchronized (evictionLock) {
-            EvictionTimer.cancel(evictor, evictorShutdownTimeoutMillis, TimeUnit.MILLISECONDS);
+            EvictionTimer.cancel(evictor, evictorShutdownTimeoutMillis.msecs);
             evictor = null;
             evictionIterator = null;
             if (delay > 0) {
@@ -800,9 +822,9 @@ implementationMissing(false)        ;
      * registered.
      * @return the JMX name
      */
-    ObjectName getJmxName() {
-        return objectName;
-    }
+    // ObjectName getJmxName() {
+    //     return objectName;
+    // }
 
     /**
      * Provides the stack trace for the call that created this pool. JMX
@@ -822,7 +844,7 @@ implementationMissing(false)        ;
      * @return the borrowed object count
      */
     long getBorrowedCount() {
-        return borrowedCount.get();
+        return borrowedCount;
     }
 
     /**
@@ -832,7 +854,7 @@ implementationMissing(false)        ;
      * @return the returned object count
      */
     long getReturnedCount() {
-        return returnedCount.get();
+        return returnedCount;
     }
 
     /**
@@ -841,7 +863,7 @@ implementationMissing(false)        ;
      * @return the created object count
      */
     long getCreatedCount() {
-        return createdCount.get();
+        return createdCount;
     }
 
     /**
@@ -850,7 +872,7 @@ implementationMissing(false)        ;
      * @return the destroyed object count
      */
     long getDestroyedCount() {
-        return destroyedCount.get();
+        return destroyedCount;
     }
 
     /**
@@ -859,7 +881,7 @@ implementationMissing(false)        ;
      * @return the evictor destroyed object count
      */
     long getDestroyedByEvictorCount() {
-        return destroyedByEvictorCount.get();
+        return destroyedByEvictorCount;
     }
 
     /**
@@ -869,7 +891,7 @@ implementationMissing(false)        ;
      * @return validation destroyed object count
      */
     long getDestroyedByBorrowValidationCount() {
-        return destroyedByBorrowValidationCount.get();
+        return destroyedByBorrowValidationCount;
     }
 
     /**
@@ -907,7 +929,7 @@ implementationMissing(false)        ;
      * @return maximum wait time in milliseconds since the pool was created
      */
     long getMaxBorrowWaitTimeMillis() {
-        return maxBorrowWaitTimeMillis.get();
+        return maxBorrowWaitTimeMillis;
     }
 
     /**
@@ -953,10 +975,9 @@ implementationMissing(false)        ;
 
         try {
             listener.onSwallowException(swallowException);
-        } catch (VirtualMachineError e) {
-            throw e;
         } catch (Throwable t) {
             // Ignore. Enjoy the irony.
+            warning(t);
         }
     }
 
@@ -965,19 +986,19 @@ implementationMissing(false)        ;
      * @param p object borrowed from the pool
      * @param waitTime time (in milliseconds) that the borrowing thread had to wait
      */
-    void updateStatsBorrow(PooledObject!(T) p, long waitTime) {
-        borrowedCount.incrementAndGet();
+    void updateStatsBorrow(IPooledObject p, long waitTime) {
+        AtomicHelper.increment(borrowedCount);
         idleTimes.add(p.getIdleTimeMillis());
         waitTimes.add(waitTime);
 
         // lock-free optimistic-locking maximum
         long currentMax;
         do {
-            currentMax = maxBorrowWaitTimeMillis.get();
+            currentMax = maxBorrowWaitTimeMillis;
             if (currentMax >= waitTime) {
                 break;
             }
-        } while (!maxBorrowWaitTimeMillis.compareAndSet(currentMax, waitTime));
+        } while (!AtomicHelper.compareAndSet(maxBorrowWaitTimeMillis, currentMax, waitTime));
     }
 
     /**
@@ -986,7 +1007,7 @@ implementationMissing(false)        ;
      * object was checked out
      */
     void updateStatsReturn(long activeTime) {
-        returnedCount.incrementAndGet();
+        AtomicHelper.increment(returnedCount);
         activeTimes.add(activeTime);
     }
 
@@ -994,7 +1015,7 @@ implementationMissing(false)        ;
      * Marks the object as returning to the pool.
      * @param pooledObject instance to return to the keyed pool
      */
-    protected void markReturningState(PooledObject!(T) pooledObject) {
+    protected void markReturningState(IPooledObject pooledObject) {
         synchronized(pooledObject) {
             PooledObjectState state = pooledObject.getState();
             if (state != PooledObjectState.ALLOCATED) {
@@ -1033,8 +1054,8 @@ implementationMissing(false)        ;
      * @param jmxNamePrefix name prefix
      * @return registered ObjectName, null if registration fails
      */
-    private ObjectName jmxRegister(BaseObjectPoolConfig!(T) config,
-            string jmxNameBase, string jmxNamePrefix) {
+    // private ObjectName jmxRegister(BaseObjectPoolConfig!(T) config,
+    //         string jmxNameBase, string jmxNamePrefix) {
         // ObjectName newObjectName = null;
         // MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         // int i = 1;
@@ -1076,9 +1097,9 @@ implementationMissing(false)        ;
         //     }
         // }
         // return newObjectName;
-        implementationMissing(false);
-        return null;
-    }
+    //     implementationMissing(false);
+    //     return null;
+    // }
 
     /**
      * Gets the stack trace of an exception as a string.
@@ -1089,10 +1110,11 @@ implementationMissing(false)        ;
         // Need the exception in string form to prevent the retention of
         // references to classes in the stack trace that could trigger a memory
         // leak in a container environment.
-        Writer w = new StringWriter();
-        PrintWriter pw = new PrintWriter(w);
-        e.printStackTrace(pw);
-        return w.toString();
+        // Writer w = new StringWriter();
+        // PrintWriter pw = new PrintWriter(w);
+        // e.printStackTrace(pw);
+        // return w.toString();
+        return e.toString();
     }
 
     // Inner classes
@@ -1116,21 +1138,21 @@ implementationMissing(false)        ;
          */
         override
         void run() {
-            ClassLoader savedClassLoader =
-                    Thread.getThis()().getContextClassLoader();
+            // ClassLoader savedClassLoader =
+            //         Thread.getThis().getContextClassLoader();
             try {
-                if (factoryClassLoader !is null) {
-                    // Set the class loader for the factory
-                    ClassLoader cl = factoryClassLoader.get();
-                    if (cl is null) {
-                        // The pool has been dereferenced and the class loader
-                        // GC'd. Cancel this timer so the pool can be GC'd as
-                        // well.
-                        cancel();
-                        return;
-                    }
-                    Thread.getThis()().setContextClassLoader(cl);
-                }
+                // if (factoryClassLoader !is null) {
+                //     // Set the class loader for the factory
+                //     ClassLoader cl = factoryClassLoader.get();
+                //     if (cl is null) {
+                //         // The pool has been dereferenced and the class loader
+                //         // GC'd. Cancel this timer so the pool can be GC'd as
+                //         // well.
+                //         cancel();
+                //         return;
+                //     }
+                //     Thread.getThis().setContextClassLoader(cl);
+                // }
 
                 // Evict from the pool
                 try {
@@ -1140,7 +1162,8 @@ implementationMissing(false)        ;
                 } catch(OutOfMemoryError oome) {
                     // Log problem but give evictor thread a chance to continue
                     // in case error is recoverable
-                    oome.printStackTrace(System.err);
+                    // oome.printStackTrace(System.err);
+                    warning(oome);
                 }
                 // Re-create idle instances.
                 try {
@@ -1150,7 +1173,7 @@ implementationMissing(false)        ;
                 }
             } finally {
                 // Restore the previous CCL
-                Thread.getThis()().setContextClassLoader(savedClassLoader);
+                // Thread.getThis().setContextClassLoader(savedClassLoader);
             }
         }
 
@@ -1194,11 +1217,13 @@ implementationMissing(false)        ;
          *
          * @param value new value to add to the cache.
          */
-        void add(long value) { // synchronized
-            values[index].set(value);
-            index++;
-            if (index == size) {
-                index = 0;
+        void add(long value) { 
+            synchronized(this) {
+                values[index] = value;
+                index++;
+                if (index == size) {
+                    index = 0;
+                }
             }
         }
 
@@ -1211,7 +1236,7 @@ implementationMissing(false)        ;
             double result = 0;
             int counter = 0;
             for (int i = 0; i < size; i++) {
-                long value = values[i].get();
+                long value = values[i];
                 if (value != -1) {
                     counter++;
                     result = result * ((counter - 1) / cast(double) counter) +
@@ -1225,113 +1250,11 @@ implementationMissing(false)        ;
         string toString() {
             StringBuilder builder = new StringBuilder();
             builder.append("StatsStore [values=");
-            builder.append(Arrays.toString(values));
+            builder.append(values.to!string());
             builder.append(", size=");
             builder.append(size);
             builder.append(", index=");
             builder.append(index);
-            builder.append("]");
-            return builder.toString();
-        }
-    }
-
-    /**
-     * The idle object eviction iterator. Holds a reference to the idle objects.
-     */
-    class EvictionIterator : Iterator!(PooledObject!(T)) {
-
-        private Deque!(PooledObject!(T)) idleObjects;
-        private Iterator!(PooledObject!(T)) idleObjectIterator;
-
-        /**
-         * Create an EvictionIterator for the provided idle instance deque.
-         * @param idleObjects underlying deque
-         */
-        this(Deque!(PooledObject!(T)) idleObjects) {
-            this.idleObjects = idleObjects;
-
-            if (getLifo()) {
-                idleObjectIterator = idleObjects.descendingIterator();
-            } else {
-                idleObjectIterator = idleObjects.iterator();
-            }
-        }
-
-        /**
-         * Returns the idle object deque referenced by this iterator.
-         * @return the idle object deque
-         */
-        Deque!(PooledObject!(T)) getIdleObjects() {
-            return idleObjects;
-        }
-
-        /** {@inheritDoc} */
-        override
-        bool hasNext() {
-            return idleObjectIterator.hasNext();
-        }
-
-        /** {@inheritDoc} */
-        override
-        PooledObject!(T) next() {
-            return idleObjectIterator.next();
-        }
-
-        /** {@inheritDoc} */
-        override
-        void remove() {
-            idleObjectIterator.remove();
-        }
-
-    }
-
-    /**
-     * Wrapper for objects under management by the pool.
-     *
-     * GenericObjectPool and GenericKeyedObjectPool maintain references to all
-     * objects under management using maps keyed on the objects. This wrapper
-     * class ensures that objects can work as hash keys.
-     *
-     * @param <T> type of objects in the pool
-     */
-    static class IdentityWrapper(T) {
-        /** Wrapped object */
-        private T instance;
-
-        /**
-         * Create a wrapper for an instance.
-         *
-         * @param instance object to wrap
-         */
-        this(T instance) {
-            this.instance = instance;
-        }
-
-        override
-        size_t toHash() @trusted nothrow {
-            return System.identityHashCode(instance);
-        }
-
-        override
-        bool opEquals(Object other) {
-            IdentityWrapper iw = cast(IdentityWrapper)other;
-            if(iw is null) return false;
-
-            return iw.instance == instance;
-        }
-
-        /**
-         * @return the wrapped object
-         */
-        T getObject() {
-            return instance;
-        }
-
-        override
-        string toString() {
-            StringBuilder builder = new StringBuilder();
-            builder.append("IdentityWrapper [instance=");
-            builder.append(instance);
             builder.append("]");
             return builder.toString();
         }
@@ -1366,7 +1289,7 @@ implementationMissing(false)        ;
         builder.append(", softMinEvictableIdleTimeMillis=");
         builder.append(softMinEvictableIdleTimeMillis);
         builder.append(", evictionPolicy=");
-        builder.append(evictionPolicy);
+        builder.append((cast(Object)evictionPolicy).toString());
         builder.append(", closeLock=");
         builder.append(closeLock);
         builder.append(", closed=");
@@ -1377,10 +1300,10 @@ implementationMissing(false)        ;
         builder.append(evictor);
         builder.append(", evictionIterator=");
         builder.append(evictionIterator);
-        builder.append(", factoryClassLoader=");
-        builder.append(factoryClassLoader);
-        builder.append(", oname=");
-        builder.append(objectName);
+        // builder.append(", factoryClassLoader=");
+        // builder.append(factoryClassLoader);
+        // builder.append(", oname=");
+        // builder.append(objectName);
         builder.append(", creationStackTrace=");
         builder.append(creationStackTrace);
         builder.append(", borrowedCount=");
@@ -1404,8 +1327,123 @@ implementationMissing(false)        ;
         builder.append(", maxBorrowWaitTimeMillis=");
         builder.append(maxBorrowWaitTimeMillis);
         builder.append(", swallowedExceptionListener=");
-        builder.append(swallowedExceptionListener);
+        builder.append((cast(Object)swallowedExceptionListener).toString());
     }
 
+
+}
+
+
+/**
+ * Wrapper for objects under management by the pool.
+ *
+ * GenericObjectPool and GenericKeyedObjectPool maintain references to all
+ * objects under management using maps keyed on the objects. This wrapper
+ * class ensures that objects can work as hash keys.
+ *
+ * @param <T> type of objects in the pool
+ */
+class IdentityWrapper(T) {
+    /** Wrapped object */
+    private T instance;
+
+    /**
+     * Create a wrapper for an instance.
+     *
+     * @param instance object to wrap
+     */
+    this(T instance) {
+        this.instance = instance;
+    }
+
+    override
+    size_t toHash() @trusted nothrow {
+        return instance.toHash();
+    }
+
+    override
+    bool opEquals(Object other) {
+        IdentityWrapper iw = cast(IdentityWrapper)other;
+        if(iw is null) return false;
+
+        return iw.instance == instance;
+    }
+
+    /**
+     * @return the wrapped object
+     */
+    T getObject() {
+        return instance;
+    }
+
+    override
+    string toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("IdentityWrapper [instance=");
+        builder.append(instance);
+        builder.append("]");
+        return builder.toString();
+    }
+}
+
+
+
+
+/**
+ * The idle object eviction iterator. Holds a reference to the idle objects.
+ */
+class EvictionIterator : InputRange!(IPooledObject) {
+
+    private Deque!(IPooledObject) idleObjects;
+    private InputRange!(IPooledObject) idleObjectIterator;
+
+    /**
+     * Create an EvictionIterator for the provided idle instance deque.
+     * @param idleObjects underlying deque
+     */
+    this(Deque!(IPooledObject) idleObjects, bool isLifo) {
+        this.idleObjects = idleObjects;
+
+        if (isLifo) {
+            idleObjectIterator = idleObjects.descendingIterator();
+        } else {
+            idleObjectIterator = idleObjects.iterator();
+        }
+    }
+
+    /**
+     * Returns the idle object deque referenced by this iterator.
+     * @return the idle object deque
+     */
+    Deque!(IPooledObject) getIdleObjects() {
+        return idleObjects;
+    }
+
+    /** {@inheritDoc} */
+    // override
+    bool empty() @property {
+        return idleObjectIterator.empty();
+    }
+
+    /** {@inheritDoc} */
+    // override
+    IPooledObject front() @property {
+        return idleObjectIterator.front();
+    }
+
+    void popFront() {
+        idleObjectIterator.popFront();
+    }
+
+    IPooledObject moveFront() { return idleObjectIterator.moveFront(); }
+
+    int opApply(scope int delegate(IPooledObject) dg) {
+        return idleObjectIterator.opApply(dg);
+    }
+
+    /// Ditto
+    int opApply(scope int delegate(size_t, IPooledObject) dg) {
+        return idleObjectIterator.opApply(dg);
+    }
 
 }

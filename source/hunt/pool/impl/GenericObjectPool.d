@@ -16,7 +16,13 @@
  */
 module hunt.pool.impl.GenericObjectPool;
 
+import hunt.pool.impl.AbandonedConfig;
+import hunt.pool.impl.BaseGenericObjectPool;
+import hunt.pool.impl.BaseObjectPoolConfig;
+import hunt.pool.impl.DefaultPooledObjectInfo;
 import hunt.pool.impl.GenericObjectPoolConfig;
+import hunt.pool.impl.GenericObjectPoolMXBean;
+import hunt.pool.impl.LinkedBlockingDeque;
 
 import hunt.pool.ObjectPool;
 import hunt.pool.PoolUtils;
@@ -37,8 +43,13 @@ import hunt.pool.UsageTracking;
 // import java.util.concurrent.TimeUnit;
 // import java.util.concurrent.atomic.AtomicLong;
 
+import hunt.collection;
 import hunt.Exceptions;
+import hunt.logging.ConsoleLogger;
+import hunt.text.StringBuilder;
+import hunt.util.DateTime;
 
+import core.time;
 import std.algorithm;
 
 /**
@@ -79,7 +90,7 @@ import std.algorithm;
  * @param <T> Type of element pooled in this pool.
  *
  */
-class GenericObjectPool(T) : BaseGenericObjectPool!(T),
+class GenericObjectPool(T) : BaseGenericObjectPool,
         ObjectPool!(T), GenericObjectPoolMXBean, UsageTracking!(T) {
 
     /**
@@ -90,7 +101,7 @@ class GenericObjectPool(T) : BaseGenericObjectPool!(T),
      *                used by this pool
      */
     this(PooledObjectFactory!(T) factory) {
-        this(factory, new GenericObjectPoolConfig!(T)());
+        this(factory, new GenericObjectPoolConfig());
     }
 
     /**
@@ -105,9 +116,10 @@ class GenericObjectPool(T) : BaseGenericObjectPool!(T),
      *                  pool.
      */
     this(PooledObjectFactory!(T) factory,
-            GenericObjectPoolConfig!(T) config) {
+            GenericObjectPoolConfig config) {
 
         super(config, ONAME_BASE, config.getJmxNamePrefix());
+        makeObjectCountLock = new Object();
         // allObjects = new ConcurrentHashMap<>();
         allObjects = new HashMap!(IdentityWrapper!(T), PooledObject!(T))();
 
@@ -136,7 +148,7 @@ class GenericObjectPool(T) : BaseGenericObjectPool!(T),
      *                         and removal.  The configuration is used by value.
      */
     this(PooledObjectFactory!(T) factory,
-            GenericObjectPoolConfig!(T) config, AbandonedConfig abandonedConfig) {
+            GenericObjectPoolConfig config, AbandonedConfig abandonedConfig) {
         this(factory, config);
         setAbandonedConfig(abandonedConfig);
     }
@@ -287,14 +299,14 @@ class GenericObjectPool(T) : BaseGenericObjectPool!(T),
      * abandoned by this pool.
      *
      * @return The abandoned object timeout in seconds if abandoned object
-     *         removal is configured for this pool; Integer.MAX_VALUE otherwise.
+     *         removal is configured for this pool; int.max otherwise.
      *
      * @see AbandonedConfig#getRemoveAbandonedTimeout()
      */
     override
     int getRemoveAbandonedTimeout() {
         AbandonedConfig ac = this.abandonedConfig;
-        return ac !is null ? ac.getRemoveAbandonedTimeout() : Integer.MAX_VALUE;
+        return ac !is null ? ac.getRemoveAbandonedTimeout() : int.max;
     }
 
 
@@ -305,7 +317,7 @@ class GenericObjectPool(T) : BaseGenericObjectPool!(T),
      *
      * @see GenericObjectPoolConfig
      */
-    void setConfig(GenericObjectPoolConfig!(T) conf) {
+    void setConfig(GenericObjectPoolConfig conf) {
         super.setConfig(conf);
         setMaxIdle(conf.getMaxIdle());
         setMinIdle(conf.getMinIdle());
@@ -325,7 +337,7 @@ class GenericObjectPool(T) : BaseGenericObjectPool!(T),
         } else {
             this.abandonedConfig = new AbandonedConfig();
             this.abandonedConfig.setLogAbandoned(abandonedConfig.getLogAbandoned());
-            this.abandonedConfig.setLogWriter(abandonedConfig.getLogWriter());
+            // this.abandonedConfig.setLogWriter(abandonedConfig.getLogWriter());
             this.abandonedConfig.setRemoveAbandonedOnBorrow(abandonedConfig.getRemoveAbandonedOnBorrow());
             this.abandonedConfig.setRemoveAbandonedOnMaintenance(abandonedConfig.getRemoveAbandonedOnMaintenance());
             this.abandonedConfig.setRemoveAbandonedTimeout(abandonedConfig.getRemoveAbandonedTimeout());
@@ -422,7 +434,7 @@ class GenericObjectPool(T) : BaseGenericObjectPool!(T),
         bool blockWhenExhausted = getBlockWhenExhausted();
 
         bool create;
-        long waitTime = DateTimeHelper.currentTimeMillis()();
+        long waitTime = DateTimeHelper.currentTimeMillis();
 
         while (p is null) {
             create = false;
@@ -438,8 +450,7 @@ class GenericObjectPool(T) : BaseGenericObjectPool!(T),
                     if (borrowMaxWaitMillis < 0) {
                         p = idleObjects.takeFirst();
                     } else {
-                        p = idleObjects.pollFirst(borrowMaxWaitMillis,
-                                TimeUnit.MILLISECONDS);
+                        p = idleObjects.pollFirst(borrowMaxWaitMillis.msecs);
                     }
                 }
                 if (p is null) {
@@ -467,8 +478,7 @@ class GenericObjectPool(T) : BaseGenericObjectPool!(T),
                     p = null;
                     if (create) {
                         NoSuchElementException nsee = new NoSuchElementException(
-                                "Unable to activate object");
-                        nsee.initCause(e);
+                                "Unable to activate object", e);
                         throw nsee;
                     }
                 }
@@ -500,7 +510,7 @@ class GenericObjectPool(T) : BaseGenericObjectPool!(T),
             }
         }
 
-        updateStatsBorrow(p, DateTimeHelper.currentTimeMillis()() - waitTime);
+        updateStatsBorrow(p, DateTimeHelper.currentTimeMillis() - waitTime);
 
         return p.getObject();
     }
@@ -731,7 +741,7 @@ class GenericObjectPool(T) : BaseGenericObjectPool!(T),
 
                 for (int i = 0, m = getNumTests(); i < m; i++) {
                     if (evictionIterator is null || !evictionIterator.hasNext()) {
-                        evictionIterator = new EvictionIterator(idleObjects);
+                        evictionIterator = new EvictionIterator(idleObjects, getLifo());
                     }
                     if (!evictionIterator.hasNext()) {
                         // Pool exhausted, nothing to do here
@@ -840,10 +850,10 @@ class GenericObjectPool(T) : BaseGenericObjectPool!(T),
         int localMaxTotal = getMaxTotal();
         // This simplifies the code later in this method
         if (localMaxTotal < 0) {
-            localMaxTotal = Integer.MAX_VALUE;
+            localMaxTotal = int.max;
         }
 
-        long localStartTimeMillis = DateTimeHelper.currentTimeMillis()();
+        long localStartTimeMillis = DateTimeHelper.currentTimeMillis();
         long localMaxWaitTimeMillis = Math.max(getMaxWaitMillis(), 0);
 
         // Flag that indicates if create should:
@@ -881,7 +891,7 @@ class GenericObjectPool(T) : BaseGenericObjectPool!(T),
             // Do not block more if maxWaitTimeMillis is set.
             if (create is null &&
                 (localMaxWaitTimeMillis > 0 &&
-                 DateTimeHelper.currentTimeMillis()() - localStartTimeMillis >= localMaxWaitTimeMillis)) {
+                 DateTimeHelper.currentTimeMillis() - localStartTimeMillis >= localMaxWaitTimeMillis)) {
                 create = Boolean.FALSE;
             }
         }
@@ -1054,33 +1064,31 @@ class GenericObjectPool(T) : BaseGenericObjectPool!(T),
      */
     private void removeAbandoned(AbandonedConfig ac) {
         // Generate a list of abandoned objects to remove
-        long now = DateTimeHelper.currentTimeMillis()();
-        long timeout =
-                now - (ac.getRemoveAbandonedTimeout() * 1000L);
-        ArrayList!(PooledObject!(T)) remove = new ArrayList!(PooledObject!(T))();
-        Iterator!(PooledObject!(T)) it = allObjects.values().iterator();
-        while (it.hasNext()) {
-            PooledObject!(T) pooledObject = it.next();
+        long now = DateTimeHelper.currentTimeMillis();
+        long timeout = now - (ac.getRemoveAbandonedTimeout() * 1000L);
+        ArrayList!(PooledObject!(T)) toRemove = new ArrayList!(PooledObject!(T))();
+
+        foreach(PooledObject!(T) pooledObject; allObjects.byValue()) {
             synchronized (pooledObject) {
                 if (pooledObject.getState() == PooledObjectState.ALLOCATED &&
                         pooledObject.getLastUsedTime() <= timeout) {
                     pooledObject.markAbandoned();
-                    remove.add(pooledObject);
+                    toRemove.add(pooledObject);
                 }
             }
         }
 
         // Now remove the abandoned objects
-        Iterator!(PooledObject!(T)) itr = remove.iterator();
-        while (itr.hasNext()) {
-            PooledObject!(T) pooledObject = itr.next();
+        foreach(PooledObject!(T) pooledObject; toRemove) {
             if (ac.getLogAbandoned()) {
-                pooledObject.printStackTrace(ac.getLogWriter());
+                // pooledObject.printStackTrace(ac.getLogWriter());
+                trac("xxxxxxx");
             }
             try {
                 invalidateObject(pooledObject.getObject());
             } catch (Exception e) {
-                e.printStackTrace();
+                // e.printStackTrace();
+                warning(e);
             }
         }
     }
@@ -1188,9 +1196,9 @@ class GenericObjectPool(T) : BaseGenericObjectPool!(T),
      * {@link #create()} will ensure that there are never more than
      * {@link #_maxActive} objects created at any one time.
      */
-    private AtomicLong createCount = new AtomicLong(0);
+    private shared long createCount = 0; // new AtomicLong(0);
     private long makeObjectCount = 0;
-    private Object makeObjectCountLock = new Object();
+    private Object makeObjectCountLock; // = new Object();
     private LinkedBlockingDeque!(PooledObject!(T)) idleObjects;
 
     // JMX specific attributes

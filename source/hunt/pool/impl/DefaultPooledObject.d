@@ -16,11 +16,22 @@
  */
 module hunt.pool.impl.DefaultPooledObject;
 
+import hunt.pool.impl.CallStack;
+import hunt.pool.impl.CallStackUtils;
 import hunt.pool.PooledObject;
 import hunt.pool.PooledObjectState;
 import hunt.pool.TrackedUse;
 
+import hunt.collection;
+import hunt.concurrency.atomic.AtomicHelper;
+import hunt.Exceptions;
+import hunt.text.StringBuilder;
+import hunt.util.DateTime;
+
+
+
 import std.algorithm;
+import std.conv;
 
 // import java.io.PrintWriter;
 // import java.util.Deque;
@@ -44,8 +55,8 @@ class DefaultPooledObject(T) : PooledObject!(T) {
     private shared long lastUseTime;
     private shared long lastReturnTime;
     private shared bool logAbandoned = false;
-    private shared CallStack borrowedBy;
-    private shared CallStack usedBy;
+    private CallStack borrowedBy;
+    private CallStack usedBy;
     private shared long borrowedCount = 0;
 
     /**
@@ -59,8 +70,8 @@ class DefaultPooledObject(T) : PooledObject!(T) {
         lastBorrowTime = createTime;
         lastUseTime = createTime;
         lastReturnTime = createTime;
-        borrowedBy = NoOpCallStack.INSTANCE;    
-        usedBy = NoOpCallStack.INSTANCE;    
+        borrowedBy = null; // NoOpCallStack.INSTANCE;    
+        usedBy = null; // NoOpCallStack.INSTANCE;    
         this.object = object;
     }
 
@@ -83,15 +94,15 @@ class DefaultPooledObject(T) : PooledObject!(T) {
         if (rTime > bTime) {
             return rTime - bTime;
         }
-        return DateTimeHelper.currentTimeMillis()() - bTime;
+        return DateTimeHelper.currentTimeMillis() - bTime;
     }
 
     override
     long getIdleTimeMillis() {
-        long elapsed = DateTimeHelper.currentTimeMillis()() - lastReturnTime;
+        long elapsed = DateTimeHelper.currentTimeMillis() - lastReturnTime;
         // elapsed may be negative if:
         // - another thread updates lastReturnTime during the calculation window
-        // - DateTimeHelper.currentTimeMillis()() is not monotonic (e.g. system time is set back)
+        // - DateTimeHelper.currentTimeMillis() is not monotonic (e.g. system time is set back)
         return elapsed >= 0 ? elapsed : 0;
     }
 
@@ -143,7 +154,7 @@ class DefaultPooledObject(T) : PooledObject!(T) {
             return cast(int)(this.toHash() - other.toHash());
         }
         // handle int overflow
-        return cast(int)min(max(lastActiveDiff, Integer.MIN_VALUE), Integer.MAX_VALUE);
+        return cast(int)min(max(lastActiveDiff, int.min), int.max);
     }
 
     override
@@ -153,14 +164,14 @@ class DefaultPooledObject(T) : PooledObject!(T) {
         result.append(object.toString());
         result.append(", State: ");
         synchronized (this) {
-            result.append(state.toString());
+            result.append(state.to!string());
         }
         return result.toString();
         // TODO add other attributes
     }
 
     override
-    synchronized bool startEvictionTest() {
+    bool startEvictionTest() { // synchronized 
         if (state == PooledObjectState.IDLE) {
             state = PooledObjectState.EVICTION;
             return true;
@@ -170,7 +181,7 @@ class DefaultPooledObject(T) : PooledObject!(T) {
     }
 
     override
-    synchronized bool endEvictionTest(
+    bool endEvictionTest( // synchronized 
             Deque!(PooledObject!(T)) idleQueue) {
         if (state == PooledObjectState.EVICTION) {
             state = PooledObjectState.IDLE;
@@ -191,12 +202,13 @@ class DefaultPooledObject(T) : PooledObject!(T) {
      * @return {@code true} if the original state was {@link PooledObjectState#IDLE IDLE}
      */
     override
-    synchronized bool allocate() {
+    bool allocate() { // synchronized
         if (state == PooledObjectState.IDLE) {
             state = PooledObjectState.ALLOCATED;
-            lastBorrowTime = DateTimeHelper.currentTimeMillis()();
+            lastBorrowTime = DateTimeHelper.currentTimeMillis();
             lastUseTime = lastBorrowTime;
-            borrowedCount++;
+            // AtomicHelper.increment(borrowedCount);
+            increment(borrowedCount);
             if (logAbandoned) {
                 borrowedBy.fillInStackTrace();
             }
@@ -218,11 +230,11 @@ class DefaultPooledObject(T) : PooledObject!(T) {
      * @return {@code true} if the state was {@link PooledObjectState#ALLOCATED ALLOCATED}
      */
     override
-    synchronized bool deallocate() {
+    bool deallocate() { // synchronized
         if (state == PooledObjectState.ALLOCATED ||
                 state == PooledObjectState.RETURNING) {
             state = PooledObjectState.IDLE;
-            lastReturnTime = DateTimeHelper.currentTimeMillis()();
+            lastReturnTime = DateTimeHelper.currentTimeMillis();
             borrowedBy.clear();
             return true;
         }
@@ -234,31 +246,31 @@ class DefaultPooledObject(T) : PooledObject!(T) {
      * Sets the state to {@link PooledObjectState#INVALID INVALID}
      */
     override
-    synchronized void invalidate() {
+    void invalidate() { // synchronized
         state = PooledObjectState.INVALID;
     }
 
     override
     void use() {
-        lastUseTime = DateTimeHelper.currentTimeMillis()();
+        lastUseTime = DateTimeHelper.currentTimeMillis();
         usedBy.fillInStackTrace();
     }
 
-    override
-    void printStackTrace(PrintWriter writer) {
-        bool written = borrowedBy.printStackTrace(writer);
-        written |= usedBy.printStackTrace(writer);
-        if (written) {
-            writer.flush();
-        }
-    }
+    // override
+    // void printStackTrace(PrintWriter writer) {
+    //     bool written = borrowedBy.printStackTrace(writer);
+    //     written |= usedBy.printStackTrace(writer);
+    //     if (written) {
+    //         writer.flush();
+    //     }
+    // }
 
     /**
      * Returns the state of this object.
      * @return state
      */
     override
-    synchronized PooledObjectState getState() {
+    PooledObjectState getState() { // synchronized
         return state;
     }
 
@@ -266,7 +278,7 @@ class DefaultPooledObject(T) : PooledObject!(T) {
      * Marks the pooled object as abandoned.
      */
     override
-    synchronized void markAbandoned() {
+    void markAbandoned() { // synchronized
         state = PooledObjectState.ABANDONED;
     }
 
@@ -274,7 +286,7 @@ class DefaultPooledObject(T) : PooledObject!(T) {
      * Marks the object as returning to the pool.
      */
     override
-    synchronized void markReturning() {
+    void markReturning() { // synchronized
         state = PooledObjectState.RETURNING;
     }
 
@@ -295,11 +307,12 @@ class DefaultPooledObject(T) : PooledObject!(T) {
     // TODO: uncomment below in 3.0
     // override
     void setRequireFullStackTrace(bool requireFullStackTrace) {
-        borrowedBy = CallStackUtils.newCallStack("'Pooled object created' " ~
-            "yyyy-MM-dd HH:mm:ss Z 'by the following code has not been returned to the pool:'",
-            true, requireFullStackTrace);
-        usedBy = CallStackUtils.newCallStack("The last code to use this object was:",
-            false, requireFullStackTrace);
+        implementationMissing(false);
+        // borrowedBy = CallStackUtils.newCallStack("'Pooled object created' " ~
+        //     "yyyy-MM-dd HH:mm:ss Z 'by the following code has not been returned to the pool:'",
+        //     true, requireFullStackTrace);
+        // usedBy = CallStackUtils.newCallStack("The last code to use this object was:",
+        //     false, requireFullStackTrace);
     }
 
 }

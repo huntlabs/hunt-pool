@@ -22,6 +22,8 @@ import hunt.pool.PooledObjectState;
 // import java.util.Deque;
 
 import hunt.collection.Deque;
+import hunt.util.Comparator;
+import hunt.util.Common;
 
 interface IPooledObject {
 
@@ -29,7 +31,7 @@ interface IPooledObject {
 
     /**
      * Obtains the time (using the same basis as
-     * {@link DateTimeHelper.currentTimeMillis()()}) that this object was created.
+     * {@link DateTimeHelper.currentTimeMillis()}) that this object was created.
      *
      * @return The creation time for the wrapped object
      */

@@ -28,9 +28,12 @@ module hunt.pool.impl.LinkedBlockingDeque;
 import hunt.collection;
 import hunt.Exceptions;
 
-import hunt.Integer;
+import core.time;
+import core.sync.condition;
+import core.sync.mutex;
 
 import std.algorithm;
+import std.range;
 
 /**
  * An optionally-bounded {@linkplain java.util.concurrent.BlockingDeque blocking
@@ -63,8 +66,7 @@ import std.algorithm;
  *       Commons Pool.
  *
  */
-class LinkedBlockingDeque(E) : AbstractQueue!(E),
-        Deque!(E) { // , Serializable 
+class LinkedBlockingDeque(E) : AbstractQueue!(E), Deque!(E) { // , Serializable 
 
     /*
      * Implemented as a simple doubly-linked list protected by a
@@ -156,7 +158,7 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E),
     private int capacity;
 
     /** Main lock guarding all access */
-    private InterruptibleReentrantLock lock;
+    private Mutex lock;
 
     /** Condition for waiting takes */
     private Condition notEmpty;
@@ -169,7 +171,7 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E),
      * {@link Integer#MAX_VALUE}.
      */
     this() {
-        this(Integer.MAX_VALUE);
+        this(int.max);
     }
 
     /**
@@ -179,7 +181,7 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E),
      * as if waiting in a FIFO request queue
      */
     this(bool fairness) {
-        this(Integer.MAX_VALUE, fairness);
+        this(int.max, fairness);
     }
 
     /**
@@ -206,9 +208,9 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E),
             throw new IllegalArgumentException();
         }
         this.capacity = capacity;
-        lock = new InterruptibleReentrantLock(fairness);
-        notEmpty = lock.newCondition();
-        notFull = lock.newCondition();
+        lock = new Mutex(); // new InterruptibleReentrantLock(fairness);
+        notEmpty = new Condition(lock); // lock.newCondition();
+        notFull = new Condition(lock); // lock.newCondition();
     }
 
     /**
@@ -222,7 +224,7 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E),
      *         of its elements are null
      */
     this(Collection!E c) {
-        this(Integer.MAX_VALUE);
+        this(int.max);
         lock.lock(); // Never contended, but necessary for visibility
         try {
             foreach(E e ; c) {
@@ -262,7 +264,7 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E),
             f.prev = x;
         }
         ++count;
-        notEmpty.signal();
+        notEmpty.notify();
         return true;
     }
 
@@ -287,7 +289,7 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E),
             l.next = x;
         }
         ++count;
-        notEmpty.signal();
+        notEmpty.notify();
         return true;
     }
 
@@ -313,7 +315,7 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E),
             n.prev = null;
         }
         --count;
-        notFull.signal();
+        notFull.notify();
         return item;
     }
 
@@ -339,7 +341,7 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E),
             p.next = null;
         }
         --count;
-        notFull.signal();
+        notFull.notify();
         return item;
     }
 
@@ -363,7 +365,7 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E),
             // Don't mess with x's links.  They may still be in use by
             // an iterator.
         --count;
-            notFull.signal();
+            notFull.notify();
         }
     }
 
@@ -438,7 +440,7 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E),
         lock.lock();
         try {
             while (!linkFirst(e)) {
-                notFull.await();
+                notFull.wait();
             }
         } finally {
             lock.unlock();
@@ -462,7 +464,7 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E),
         lock.lock();
         try {
             while (!linkLast(e)) {
-                notFull.await();
+                notFull.wait();
             }
         } finally {
             lock.unlock();
@@ -483,19 +485,22 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E),
      * @throws InterruptedException if the thread is interrupted whilst waiting
      *         for space
      */
-    bool offerFirst(E e, long timeout, TimeUnit unit)
-{
+    bool offerFirst(E e, Duration timeout) {
         if (e is null) {
             throw new NullPointerException();
         }
-        long nanos = unit.toNanos(timeout);
-        lock.lockInterruptibly();
+        // long nanos = unit.toNanos(timeout);
+        lock.lock();
+        bool isTimeout = false;
         try {
             while (!linkFirst(e)) {
-                if (nanos <= 0) {
+                if (isTimeout) {
                     return false;
                 }
-                nanos = notFull.awaitNanos(nanos);
+                // nanos = notFull.awaitNanos(nanos);
+// TODO: Tasks pending completion -@zxp at 7/10/2019, 1:31:30 PM                
+// 
+                isTimeout = !notFull.wait(timeout);
             }
             return true;
         } finally {
@@ -517,19 +522,19 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E),
      * @throws InterruptedException if the thread is interrupted whist waiting
      *         for space
      */
-    bool offerLast(E e, long timeout, TimeUnit unit)
-{
+    bool offerLast(E e, Duration timeout) {
         if (e is null) {
             throw new NullPointerException();
         }
-        long nanos = unit.toNanos(timeout);
-        lock.lockInterruptibly();
+        // long nanos = unit.toNanos(timeout);
+        lock.lock();
+        bool isTimeout = false;
         try {
             while (!linkLast(e)) {
-                if (nanos <= 0) {
+                if (isTimeout) {
                     return false;
                 }
-                nanos = notFull.awaitNanos(nanos);
+                isTimeout = !notFull.wait(timeout);
             }
             return true;
         } finally {
@@ -593,7 +598,7 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E),
         try {
             E x;
             while ( (x = unlinkFirst()) is null) {
-                notEmpty.await();
+                notEmpty.wait();
             }
             return x;
         } finally {
@@ -613,7 +618,7 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E),
         try {
             E x;
             while ( (x = unlinkLast()) is null) {
-                notEmpty.await();
+                notEmpty.wait();
             }
             return x;
         } finally {
@@ -631,17 +636,18 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E),
      * @return the unlinked element
      * @throws InterruptedException if the current thread is interrupted
      */
-    E pollFirst(long timeout, TimeUnit unit)
-{
-        long nanos = unit.toNanos(timeout);
-        lock.lockInterruptibly();
+    E pollFirst(Duration timeout) {
+        // long nanos = unit.toNanos(timeout);
+        lock.lock();
+        
+        bool isTimeout = false;
         try {
             E x;
             while ( (x = unlinkFirst()) is null) {
-                if (nanos <= 0) {
+                if (isTimeout) {
                     return null;
                 }
-                nanos = notEmpty.awaitNanos(nanos);
+                isTimeout = !notEmpty.wait(timeout);
             }
             return x;
         } finally {
@@ -659,17 +665,17 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E),
      * @return the unlinked element
      * @throws InterruptedException if the current thread is interrupted
      */
-    E pollLast(long timeout, TimeUnit unit)
-{
-        long nanos = unit.toNanos(timeout);
-        lock.lockInterruptibly();
+    E pollLast(Duration timeout) {
+        // long nanos = unit.toNanos(timeout);
+        lock.lock();
+        bool isTimeout = false;
         try {
             E x;
             while ( (x = unlinkLast()) is null) {
-                if (nanos <= 0) {
+                if (isTimeout) {
                     return null;
                 }
-                nanos = notEmpty.awaitNanos(nanos);
+                isTimeout = !notEmpty.wait(timeout);
             }
             return x;
         } finally {
@@ -722,7 +728,7 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E),
     }
 
     override
-    bool removeFirstOccurrence(Object o) {
+    bool removeFirstOccurrence(E o) {
         if (o is null) {
             return false;
         }
@@ -740,8 +746,8 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E),
         }
     }
 
-    override
-    bool removeLastOccurrence(Object o) {
+    // override
+    bool removeLastOccurrence(E o) {
         if (o is null) {
             return false;
         }
@@ -810,8 +816,7 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E),
      * @throws InterruptedException if the thread is interrupted whilst waiting
      *         for space
      */
-    bool offer(E e, long timeout, TimeUnit unit)
-{
+    bool offer(E e, Duration timeout) {
         return offerLast(e, timeout, unit);
     }
 
@@ -860,7 +865,7 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E),
      * @return the unlinked element
      * @throws InterruptedException if the current thread is interrupted
      */
-    E poll(long timeout, TimeUnit unit){
+    E poll(Duration timeout) {
         return pollFirst(timeout, unit);
     }
 
@@ -922,7 +927,7 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E),
      * @throws IllegalArgumentException if c is this instance
      */
     int drainTo(Collection!E c) {
-        return drainTo(c, Integer.MAX_VALUE);
+        return drainTo(c, int.max);
     }
 
     /**
@@ -996,7 +1001,7 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E),
      * @return {@code true} if this deque changed as a result of the call
      */
     override
-    bool remove(Object o) {
+    bool remove(E o) {
         return removeFirstOccurrence(o);
     }
 
@@ -1024,7 +1029,7 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E),
      * @return {@code true} if this deque contains the specified element
      */
     override
-    bool contains(Object o) {
+    bool contains(E o) {
         if (o is null) {
             return false;
         }
@@ -1096,10 +1101,10 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E),
      * @return an array containing all of the elements in this deque
      */
     override
-    Object[] toArray() {
+    E[] toArray() {
         lock.lock();
         try {
-            Object[] a = new Object[count];
+            E[] a = new E[count];
             int k = 0;
             for (Node!(E) p = first; p !is null; p = p.next) {
                 a[k++] = p.item;
@@ -1180,22 +1185,22 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E),
      * @return an iterator over the elements in this deque in proper sequence
      */
     override
-    Iterator!(E) iterator() {
+    InputRange!(E) iterator() {
         return new Itr();
     }
 
     /**
      * {@inheritDoc}
      */
-    override
-    Iterator!(E) descendingIterator() {
+    // override
+    InputRange!(E) descendingIterator() {
         return new DescendingItr();
     }
 
     /**
      * Base class for Iterators for LinkedBlockingDeque
      */
-    private abstract class AbstractItr : Iterator!(E) {
+    private abstract class AbstractItr : InputRange!(E) {
         /**
          * The next node to return in next()
          */
@@ -1284,13 +1289,13 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E),
             }
         }
 
-        override
-        bool hasNext() {
-            return next !is null;
+        // override
+        bool empty() {
+            return next is null;
         }
 
-        override
-        E next() {
+        // override
+        E front() {
             if (next is null) {
                 throw new NoSuchElementException();
             }
@@ -1300,8 +1305,8 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E),
             return x;
         }
 
-        override
-        void remove() {
+        // override
+        void popFront() {
             Node!(E) n = lastRet;
             if (n is null) {
                 throw new IllegalStateException();
@@ -1316,22 +1321,65 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E),
                 lock.unlock();
             }
         }
+        
+        E moveFront() @property { throw new NotSupportedException(); }
+
+        
+        int opApply(scope int delegate(E) dg) {
+            if(dg is null)
+                throw new NullPointerException();
+            
+            int result = 0;
+            lock.lock();
+            scope(exit) {
+                lock.unlock();
+            }
+
+            while(next !is null) {
+                result = dg(nextItem);
+                next = succ(next);
+                nextItem = next is null ? null : next.item;                
+            }
+            
+            return result;
+        }
+
+        /// Ditto
+        int opApply(scope int delegate(size_t, E) dg) {
+            if(dg is null)
+                throw new NullPointerException();
+
+            int result = 0;
+            lock.lock();
+            scope(exit) {
+                lock.unlock();
+            }
+
+            size_t index = 0;
+            while(next !is null) {
+                result = dg(index, nextItem);
+                next = succ(next);
+                nextItem = next is null ? null : next.item;
+                index++;         
+            }
+            
+            return result;                
+        }
     }
 
     /** Forward iterator */
     private class Itr : AbstractItr {
-        override
-        Node!(E) firstNode() { return first; }
-        override
-        Node!(E) nextNode(Node!(E) n) { return n.next; }
+        override Node!(E) firstNode() { return first; }
+
+        override Node!(E) nextNode(Node!(E) n) { return n.next; }
+
         }
 
     /** Descending iterator */
     private class DescendingItr : AbstractItr {
-        override
-        Node!(E) firstNode() { return last; }
-        override
-        Node!(E) nextNode(Node!(E) n) { return n.prev; }
+        override Node!(E) firstNode() { return last; }
+
+        override Node!(E) nextNode(Node!(E) n) { return n.prev; }
     }
 
     /**

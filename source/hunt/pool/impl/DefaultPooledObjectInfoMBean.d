@@ -31,7 +31,7 @@ module hunt.pool.impl.DefaultPooledObjectInfoMBean;
 interface DefaultPooledObjectInfoMBean {
     /**
      * Obtain the time (using the same basis as
-     * {@link DateTimeHelper.currentTimeMillis()()}) that pooled object was created.
+     * {@link DateTimeHelper.currentTimeMillis()}) that pooled object was created.
      *
      * @return The creation time for the pooled object
      */
@@ -47,7 +47,7 @@ interface DefaultPooledObjectInfoMBean {
 
     /**
      * Obtain the time (using the same basis as
-     * {@link DateTimeHelper.currentTimeMillis()()}) the polled object was last borrowed.
+     * {@link DateTimeHelper.currentTimeMillis()}) the polled object was last borrowed.
      *
      * @return The time the pooled object was last borrowed
      */
@@ -72,7 +72,7 @@ interface DefaultPooledObjectInfoMBean {
 
     /**
      * Obtain the time (using the same basis as
-     * {@link DateTimeHelper.currentTimeMillis()()})the wrapped object was last returned.
+     * {@link DateTimeHelper.currentTimeMillis()})the wrapped object was last returned.
      *
      * @return The time the object was last returned
      */

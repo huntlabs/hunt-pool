@@ -340,7 +340,7 @@ class GenericKeyedObjectPool(K, T) : BaseGenericObjectPool!(T),
         bool blockWhenExhausted = getBlockWhenExhausted();
 
         bool create;
-        long waitTime = DateTimeHelper.currentTimeMillis()();
+        long waitTime = DateTimeHelper.currentTimeMillis();
         ObjectDeque!(T) objectDeque = register(key);
 
         try {
@@ -423,7 +423,7 @@ class GenericKeyedObjectPool(K, T) : BaseGenericObjectPool!(T),
             deregister(key);
         }
 
-        updateStatsBorrow(p, DateTimeHelper.currentTimeMillis()() - waitTime);
+        updateStatsBorrow(p, DateTimeHelper.currentTimeMillis() - waitTime);
 
         return p.getObject();
     }
@@ -885,7 +885,7 @@ class GenericKeyedObjectPool(K, T) : BaseGenericObjectPool!(T),
                         }
 
                         Deque!(PooledObject!(T)) idleObjects = objectDeque.getIdleObjects();
-                        evictionIterator = new EvictionIterator(idleObjects);
+                        evictionIterator = new EvictionIterator(idleObjects, getLifo());
                         if (evictionIterator.hasNext()) {
                             break;
                         }

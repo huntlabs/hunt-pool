@@ -1471,7 +1471,7 @@ class PoolUtils {
         override
         void returnObject(T obj) {
             bool discard = false;
-            long now = DateTimeHelper.currentTimeMillis()();
+            long now = DateTimeHelper.currentTimeMillis();
             synchronized (pool) {
                 if (factor.getNextShrink() < now) { // XXX: Pool 3: move test
                                                     // out of sync block
@@ -1636,7 +1636,7 @@ class PoolUtils {
         override
         void returnObject(K key, V obj){
             bool discard = false;
-            long now = DateTimeHelper.currentTimeMillis()();
+            long now = DateTimeHelper.currentTimeMillis();
             ErodingFactor factor = getErodingFactor(key);
             synchronized (keyedPool) {
                 if (factor.getNextShrink() < now) {

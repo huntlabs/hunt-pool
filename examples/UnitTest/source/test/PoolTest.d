@@ -17,6 +17,8 @@
 
 module test.PoolTest;
 
+import hunt.pool.PooledObject;
+import hunt.pool.PooledObjectFactory;
 
 import hunt.pool.impl.DefaultPooledObject;
 import hunt.pool.impl.GenericObjectPool;

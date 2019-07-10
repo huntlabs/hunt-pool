@@ -16,6 +16,10 @@
  */
 module hunt.pool.impl.GenericKeyedObjectPoolConfig;
 
+import hunt.pool.impl.BaseObjectPoolConfig;
+
+import hunt.text.StringBuilder;
+
 import hunt.Exceptions;
 
 /**
@@ -29,7 +33,7 @@ import hunt.Exceptions;
  *
  * @param <T> Type of element pooled.
  */
-class GenericKeyedObjectPoolConfig(T) : BaseObjectPoolConfig!(T) {
+class GenericKeyedObjectPoolConfig : BaseObjectPoolConfig {
 
     /**
      * The default value for the {@code maxTotalPerKey} configuration attribute.
@@ -174,10 +178,10 @@ class GenericKeyedObjectPoolConfig(T) : BaseObjectPoolConfig!(T) {
         this.maxIdlePerKey = maxIdlePerKey;
     }
 
-    override
-    GenericKeyedObjectPoolConfig!(T) clone() {
+    // override
+    GenericKeyedObjectPoolConfig clone() {
         try {
-            return cast(GenericKeyedObjectPoolConfig!(T)) super.clone();
+            return cast(GenericKeyedObjectPoolConfig) super.clone();
         } catch (CloneNotSupportedException e) {
             throw new AssertionError(); // Can't happen
         }

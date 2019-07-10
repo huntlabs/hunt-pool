@@ -16,8 +16,15 @@
  */
 module hunt.pool.impl.BaseObjectPoolConfig;
 
+import hunt.pool.impl.DefaultEvictionPolicy;
+import hunt.pool.impl.EvictionPolicy;
+
+
 import hunt.pool.BaseObject;
+
+import hunt.text.StringBuilder;
 import hunt.util.Common;
+
 
 /**
  * Provides the implementation for the common attributes shared by the
@@ -29,7 +36,7 @@ import hunt.util.Common;
  *
  * @param <T> Type of element pooled.
  */
-abstract class BaseObjectPoolConfig(T) : BaseObject, Cloneable {
+abstract class BaseObjectPoolConfig : BaseObject, Cloneable {
 
     /**
      * The default value for the {@code lifo} configuration attribute.
@@ -160,7 +167,7 @@ abstract class BaseObjectPoolConfig(T) : BaseObject, Cloneable {
      * @see GenericObjectPool#getEvictionPolicyClassName()
      * @see GenericKeyedObjectPool#getEvictionPolicyClassName()
      */
-    enum string DEFAULT_EVICTION_POLICY_CLASS_NAME = typeid(DefaultEvictionPolicy).name;
+    enum string DEFAULT_EVICTION_POLICY_CLASS_NAME = typeof(DefaultEvictionPolicy).stringof;
 
     private bool lifo = DEFAULT_LIFO;
 
@@ -180,7 +187,7 @@ abstract class BaseObjectPoolConfig(T) : BaseObject, Cloneable {
     private int numTestsPerEvictionRun =
             DEFAULT_NUM_TESTS_PER_EVICTION_RUN;
 
-    private EvictionPolicy!(T) evictionPolicy = null; // Only 2.6.0 applications set this
+    private EvictionPolicy evictionPolicy = null; // Only 2.6.0 applications set this
 
     private string evictionPolicyClassName = DEFAULT_EVICTION_POLICY_CLASS_NAME;
 
@@ -561,7 +568,7 @@ abstract class BaseObjectPoolConfig(T) : BaseObject, Cloneable {
      * @see GenericObjectPool#getEvictionPolicy()
      * @see GenericKeyedObjectPool#getEvictionPolicy()
      */
-    EvictionPolicy!(T) getEvictionPolicy() {
+    EvictionPolicy getEvictionPolicy() {
         return evictionPolicy;
     }
 
@@ -589,7 +596,7 @@ abstract class BaseObjectPoolConfig(T) : BaseObject, Cloneable {
      * @see GenericObjectPool#getEvictionPolicy()
      * @see GenericKeyedObjectPool#getEvictionPolicy()
      */
-    void setEvictionPolicy(EvictionPolicy!(T) evictionPolicy) {
+    void setEvictionPolicy(EvictionPolicy evictionPolicy) {
         this.evictionPolicy = evictionPolicy;
     }
 

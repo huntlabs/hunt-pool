@@ -117,7 +117,7 @@ class SecurityManagerCallStack : CallStack {
      * A snapshot of a class stack.
      */
     // private static class Snapshot {
-    //     private long timestamp = DateTimeHelper.currentTimeMillis()();
+    //     private long timestamp = DateTimeHelper.currentTimeMillis();
     //     private List<WeakReference<Class<?>>> stack;
 
     //     /**

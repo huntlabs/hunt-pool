@@ -16,6 +16,8 @@
  */
 module hunt.pool.PooledObjectFactory;
 
+import hunt.pool.PooledObject;
+
 /**
  * An interface defining life-cycle methods for instances to be served by an
  * {@link ObjectPool}.
