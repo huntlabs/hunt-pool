@@ -52,11 +52,13 @@ class PoolTest {
         pool.setTimeBetweenEvictionRunsMillis(EVICTION_PERIOD_IN_MILLIS);
         pool.addObject();
 
+        trace("running here");
         try {
             Thread.sleep(EVICTION_PERIOD_IN_MILLIS.msecs);
         } catch (InterruptedException e) {
             ThreadEx.interrupted();
         }
+        trace("running here");
 
         Thread[] threads = Thread.getAll(); //new Thread[Thread.activeCount()];
         // Thread.enumerate(threads);
@@ -66,7 +68,8 @@ class PoolTest {
             }
             string name = thread.name();
             // assertFalse(name, name.contains(COMMONS_POOL_EVICTIONS_TIMER_THREAD_NAME));
-            tracef("name: %s", name);
+            tracef("name: %s, isRunning: %s, isDaemon: %s", 
+                name, thread.isRunning(), thread.isDaemon());
         }
     }
 }
@@ -90,11 +93,13 @@ private class PooledFooFactory : PooledObjectFactory!(Foo) {
 
     override
     bool validateObject(IPooledObject pooledObject) {
+        info("running here");
         try {
             Thread.sleep(VALIDATION_WAIT_IN_MILLIS.msecs);
         } catch (InterruptedException e) {
             ThreadEx.interrupted();
         }
+        info("running here");
         return false;
     }
 

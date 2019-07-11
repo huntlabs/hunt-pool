@@ -58,6 +58,7 @@ import hunt.util.DateTime;
 
 import core.time;
 import std.algorithm;
+import std.math;
 
 /**
  * A configurable {@link ObjectPool} implementation.
@@ -753,6 +754,7 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
                     if (evictionIterator is null || evictionIterator.empty()) {
                         evictionIterator = new EvictionIterator(idleObjects, getLifo());
                     }
+                    
                     if (evictionIterator.empty()) {
                         // Pool exhausted, nothing to do here
                         return;
@@ -793,6 +795,8 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
                         evict = false;
                     }
 
+tracef("evict=%s", evict);
+
                     if (evict) {
                         destroy(underTest);
                         destroyedByEvictorCount.increment();
@@ -825,6 +829,8 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
                             // states are used
                         }
                     }
+
+tracef("destroyedByEvictorCount = %d", destroyedByEvictorCount)                    ;
                 }
             }
         }
@@ -1064,7 +1070,6 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
         if (numTestsPerEvictionRun >= 0) {
             return min(numTestsPerEvictionRun, idleObjects.size());
         }
-        import std.math;
         return cast(int) (ceil(idleObjects.size() /
                 abs(cast(float) numTestsPerEvictionRun)));
     }

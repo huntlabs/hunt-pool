@@ -969,6 +969,8 @@ abstract class BaseGenericObjectPool : BaseObject {
     void swallowException(Exception swallowException) {
         SwallowedExceptionListener listener = getSwallowedExceptionListener();
 
+        warning(swallowException);
+
         if (listener is null) {
             return;
         }

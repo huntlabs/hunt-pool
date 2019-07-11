@@ -1,0 +1,15 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/simpledemo
+simpledemo.so
+simpledemo.dylib
+simpledemo.dll
+simpledemo.a
+simpledemo.lib
+simpledemo-test-*
+*.exe
+*.o
+*.obj
+*.lst

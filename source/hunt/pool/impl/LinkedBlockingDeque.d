@@ -27,13 +27,17 @@ module hunt.pool.impl.LinkedBlockingDeque;
 
 import hunt.collection;
 import hunt.Exceptions;
+import hunt.logging.ConsoleLogger;
 
 import core.time;
-import core.sync.condition;
-import core.sync.mutex;
+// import core.sync.condition;
+import hunt.pool.impl.Condition;
+import hunt.pool.impl.Mutex;
+// import core.sync.mutex;
 
 import std.algorithm;
 import std.range;
+
 
 /**
  * An optionally-bounded {@linkplain java.util.concurrent.BlockingDeque blocking
@@ -1252,8 +1256,8 @@ class LinkedBlockingDeque(E) : AbstractDeque!(E) { // , Serializable
         lock.lock();
         try {
             // return lock.hasWaiters(notEmpty);
-            implementationMissing(false);
-            return false;
+            trace("waiters: ", notEmpty.getWaitQueueLength());
+            return notEmpty.hasWaiters();
         } finally {
             lock.unlock();
         }
@@ -1269,8 +1273,7 @@ class LinkedBlockingDeque(E) : AbstractDeque!(E) { // , Serializable
         lock.lock();
         try {
         //    return lock.getWaitQueueLength(notEmpty);
-            implementationMissing(false);
-            return 0;
+            return notEmpty.getWaitQueueLength();
         } finally {
             lock.unlock();
         }
