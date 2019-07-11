@@ -8,6 +8,6 @@
 		"hunt-pool" :{"path": "../../"}
 	},
 	"versions": [
-		"HUNT_DEBUG", "HUNT_CONCURRENCY_DEBUG"
+		"HUNT_DEBUG", "HUNT_CONCURRENCY_DEBUG1"
 	]
 }

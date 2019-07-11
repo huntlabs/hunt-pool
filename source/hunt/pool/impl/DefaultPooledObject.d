@@ -18,6 +18,8 @@ module hunt.pool.impl.DefaultPooledObject;
 
 import hunt.pool.impl.CallStack;
 import hunt.pool.impl.CallStackUtils;
+import hunt.pool.impl.NoOpCallStack;
+
 import hunt.pool.PooledObject;
 import hunt.pool.PooledObjectState;
 import hunt.pool.TrackedUse;
@@ -70,8 +72,8 @@ class DefaultPooledObject(T) : PooledObject!(T) {
         lastBorrowTime = createTime;
         lastUseTime = createTime;
         lastReturnTime = createTime;
-        borrowedBy = null; // NoOpCallStack.INSTANCE;    
-        usedBy = null; // NoOpCallStack.INSTANCE;    
+        borrowedBy = NoOpCallStack.INSTANCE;    
+        usedBy = NoOpCallStack.INSTANCE;    
         this.object = object;
     }
 
@@ -207,8 +209,7 @@ class DefaultPooledObject(T) : PooledObject!(T) {
             state = PooledObjectState.ALLOCATED;
             lastBorrowTime = DateTimeHelper.currentTimeMillis();
             lastUseTime = lastBorrowTime;
-            // AtomicHelper.increment(borrowedCount);
-            increment(borrowedCount);
+            borrowedCount.increment();
             if (logAbandoned) {
                 borrowedBy.fillInStackTrace();
             }

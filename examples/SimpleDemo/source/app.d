@@ -44,7 +44,11 @@ class BigObjFactory : PooledObjectFactory!(BigObj) {
 	}
 
 	override bool validateObject(IPooledObject pooledObject) {
-		return rnd.front() % 2 == 0;
+		bool r = rnd.front() % 2 == 0;
+		// tracef("r=%s", r);
+		rnd.popFront();
+
+		return r;
 
 	}
 

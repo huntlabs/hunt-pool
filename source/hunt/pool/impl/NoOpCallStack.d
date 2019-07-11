@@ -17,9 +17,7 @@
 module hunt.pool.impl.NoOpCallStack;
 
 import hunt.pool.impl.CallStack;
-
-
-// import java.io.PrintWriter;
+import hunt.io.Writer;
 
 /**
  * CallStack strategy using no-op implementations of all functionality. Can be used by default when abandoned object
@@ -40,12 +38,10 @@ class NoOpCallStack : CallStack {
     private this() {
     }
 
-    // override
-    // bool printStackTrace(PrintWriter writer) {
-    //     return false;
-    // }
+    bool printStackTrace(Writer writer) {
+        return false;
+    }
 
-    override
     void fillInStackTrace() {
         // no-op
     }

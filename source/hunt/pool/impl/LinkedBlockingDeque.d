@@ -1256,7 +1256,12 @@ class LinkedBlockingDeque(E) : AbstractDeque!(E) { // , Serializable
         lock.lock();
         try {
             // return lock.hasWaiters(notEmpty);
-            trace("waiters: ", notEmpty.getWaitQueueLength());
+            version(HUNT_DEBUG) {
+                int len = notEmpty.getWaitQueueLength();
+                if(len>0) {
+                    tracef("waiters: %d", len);
+                }
+            }
             return notEmpty.hasWaiters();
         } finally {
             lock.unlock();
