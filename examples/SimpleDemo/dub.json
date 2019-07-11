@@ -1,0 +1,13 @@
+{
+	"name": "simple-demo",
+	"description": "A simple demo for hunt-pool.",
+	"copyright": "Copyright (C) 2019, HuntLabs.net",
+	"homepage": "https://www.huntlabs.net",
+	"license": "Apache-2.0",
+	"dependencies": {
+		"hunt-pool" :{"path": "../../"}
+	},
+	"versions": [
+		"HUNT_DEBUG", "HUNT_CONCURRENCY_DEBUG"
+	]
+}
