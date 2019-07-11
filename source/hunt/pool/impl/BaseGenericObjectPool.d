@@ -178,7 +178,9 @@ abstract class BaseGenericObjectPool : BaseObject {
         // } else {
         //     factoryClassLoader = new WeakReference<>(cl);
         // }
-        implementationMissing(false);
+        // implementationMissing(false);
+        // FIXME: Needing refactor or cleanup -@zxp at 7/11/2019, 9:53:27 AM
+        // 
 
         fairness = config.getFairness();
     }
@@ -256,11 +258,9 @@ abstract class BaseGenericObjectPool : BaseObject {
         setTimeBetweenEvictionRunsMillis(conf.getTimeBetweenEvictionRunsMillis());
         setSoftMinEvictableIdleTimeMillis(conf.getSoftMinEvictableIdleTimeMillis());
         EvictionPolicy policy = conf.getEvictionPolicy();
-        if (policy is null) {
-            // Use the class name (pre-2.6.0 compatible)
-            setEvictionPolicyClassName(conf.getEvictionPolicyClassName());
+        if(policy is null) {
+            warning("policy is null");
         } else {
-            // Otherwise, use the class (2.6.0 feature)
             setEvictionPolicy(policy);
         }
         setEvictorShutdownTimeoutMillis(conf.getEvictorShutdownTimeoutMillis());
@@ -702,10 +702,10 @@ abstract class BaseGenericObjectPool : BaseObject {
      * @since 2.6.0 If loading the class using the thread context class loader fails, use the class loader for the
      *        {@link EvictionPolicy} interface.
      */
-    void setEvictionPolicyClassName(string evictionPolicyClassName) {
-        // setEvictionPolicyClassName(evictionPolicyClassName, Thread.getThis().getContextClassLoader());
-        implementationMissing(false);
-    }
+    // void setEvictionPolicyClassName(string evictionPolicyClassName) {
+    //     // setEvictionPolicyClassName(evictionPolicyClassName, Thread.getThis().getContextClassLoader());
+    //     implementationMissing(false);
+    // }
 
     /**
      * Gets the timeout that will be used when waiting for the Evictor to

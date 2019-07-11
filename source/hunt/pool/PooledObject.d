@@ -80,7 +80,9 @@ interface IPooledObject {
      */
     long getLastUsedTime();
 
-    bool opEquals(Object obj);
+    bool opEquals(IPooledObject obj);
+
+    // bool opEquals(Object obj);
 
     size_t toHash() @trusted nothrow;
 
@@ -191,7 +193,7 @@ interface IPooledObject {
  * @param <T> the type of object in the pool
  *
  */
-interface PooledObject(T) : IPooledObject, Comparable!(PooledObject!(T)) {
+interface PooledObject(T) : IPooledObject, Comparable!(IPooledObject) {
 
     /**
      * Obtains the underlying object that is wrapped by this instance of
@@ -212,7 +214,7 @@ interface PooledObject(T) : IPooledObject, Comparable!(PooledObject!(T)) {
      * {@inheritDoc}
      * </p>
      */
-    int compareTo(PooledObject!(T) other);
+    int opCmp(IPooledObject other);
 
     /**
      * Called to inform the object that the eviction test has ended.
@@ -222,6 +224,6 @@ interface PooledObject(T) : IPooledObject, Comparable!(PooledObject!(T)) {
      *
      * @return  Currently not used
      */
-    bool endEvictionTest(Deque!(PooledObject!(T)) idleQueue);
+    bool endEvictionTest(Deque!(IPooledObject) idleQueue);
 
 }

@@ -143,7 +143,7 @@ class DefaultPooledObject(T) : PooledObject!(T) {
     }
 
     override
-    int compareTo(PooledObject!(T) other) {
+    int opCmp(IPooledObject other) {
         long lastActiveDiff = this.getLastReturnTime() - other.getLastReturnTime();
         if (lastActiveDiff == 0) {
             // Make sure the natural ordering is broadly consistent with equals
@@ -182,7 +182,7 @@ class DefaultPooledObject(T) : PooledObject!(T) {
 
     override
     bool endEvictionTest( // synchronized 
-            Deque!(PooledObject!(T)) idleQueue) {
+            Deque!(IPooledObject) idleQueue) {
         if (state == PooledObjectState.EVICTION) {
             state = PooledObjectState.IDLE;
             return true;
@@ -313,6 +313,15 @@ class DefaultPooledObject(T) : PooledObject!(T) {
         //     true, requireFullStackTrace);
         // usedBy = CallStackUtils.newCallStack("The last code to use this object was:",
         //     false, requireFullStackTrace);
+    }
+
+    
+    bool opEquals(IPooledObject obj) {
+        return opEquals(cast(Object) obj);
+    }
+
+    override bool opEquals(Object obj) {
+        return super.opEquals(obj);
     }
 
 }

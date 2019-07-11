@@ -82,7 +82,7 @@ interface PooledObjectFactory(T) {
    * @throws Exception if there is a problem creating a new instance,
    *    this will be propagated to the code requesting an object.
    */
-  PooledObject!(T) makeObject();
+  IPooledObject makeObject();
 
   /**
    * Destroys an instance no longer needed by the pool.
@@ -104,7 +104,7 @@ interface PooledObjectFactory(T) {
    * @see #validateObject
    * @see ObjectPool#invalidateObject
    */
-  void destroyObject(PooledObject!(T) p);
+  void destroyObject(IPooledObject p);
 
   /**
    * Ensures that the instance is safe to be returned by the pool.
@@ -114,7 +114,7 @@ interface PooledObjectFactory(T) {
    * @return <code>false</code> if <code>obj</code> is not valid and should
    *         be dropped from the pool, <code>true</code> otherwise.
    */
-  bool validateObject(PooledObject!(T) p);
+  bool validateObject(IPooledObject p);
 
   /**
    * Reinitializes an instance to be returned by the pool.
@@ -126,7 +126,7 @@ interface PooledObjectFactory(T) {
    *
    * @see #destroyObject
    */
-  void activateObject(PooledObject!(T) p);
+  void activateObject(IPooledObject p);
 
   /**
    * Uninitializes an instance to be returned to the idle object pool.
@@ -138,5 +138,5 @@ interface PooledObjectFactory(T) {
    *
    * @see #destroyObject
    */
-  void passivateObject(PooledObject!(T) p);
+  void passivateObject(IPooledObject p);
 }

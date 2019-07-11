@@ -66,7 +66,7 @@ import std.range;
  *       Commons Pool.
  *
  */
-class LinkedBlockingDeque(E) : AbstractQueue!(E), Deque!(E) { // , Serializable 
+class LinkedBlockingDeque(E) : AbstractDeque!(E) { // , Serializable 
 
     /*
      * Implemented as a simple doubly-linked list protected by a
@@ -225,21 +225,28 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E), Deque!(E) { // , Serializable
      */
     this(Collection!E c) {
         this(int.max);
-        lock.lock(); // Never contended, but necessary for visibility
-        try {
-            foreach(E e ; c) {
-                if (e is null) {
-                    throw new NullPointerException();
-                }
-                if (!linkLast(e)) {
-                    throw new IllegalStateException("Deque full");
-                }
+
+        foreach(E e ; c) {
+            if (e is null) {
+                throw new NullPointerException();
             }
-        } finally {
-            lock.unlock();
+            if (!linkLast(e)) {
+                throw new IllegalStateException("Deque full");
+            }
         }
     }
 
+    this(E[] c) {
+        this(int.max);
+        foreach(E e ; c) {
+            if (e is null) {
+                throw new NullPointerException();
+            }
+            if (!linkLast(e)) {
+                throw new IllegalStateException("Deque full");
+            }
+        }
+    }
 
     // Basic linking and unlinking operations, called only while holding lock
 
@@ -375,26 +382,6 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E), Deque!(E) { // , Serializable
      * {@inheritDoc}
      */
     override
-    void addFirst(E e) {
-        if (!offerFirst(e)) {
-            throw new IllegalStateException("Deque full");
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    override
-    void addLast(E e) {
-        if (!offerLast(e)) {
-            throw new IllegalStateException("Deque full");
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    override
     bool offerFirst(E e) {
         if (e is null) {
             throw new NullPointerException();
@@ -410,8 +397,7 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E), Deque!(E) { // , Serializable
     /**
      * {@inheritDoc}
      */
-    override
-    bool offerLast(E e) {
+    override bool offerLast(E e) {
         if (e is null) {
             throw new NullPointerException();
         }
@@ -457,7 +443,7 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E), Deque!(E) { // , Serializable
      * @throws InterruptedException if the thread is interrupted whilst waiting
      *         for space
      */
-    void putLast(E e){
+    override void putLast(E e) {
         if (e is null) {
             throw new NullPointerException();
         }
@@ -522,7 +508,7 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E), Deque!(E) { // , Serializable
      * @throws InterruptedException if the thread is interrupted whist waiting
      *         for space
      */
-    bool offerLast(E e, Duration timeout) {
+    override bool offerLast(E e, Duration timeout) {
         if (e is null) {
             throw new NullPointerException();
         }
@@ -540,30 +526,6 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E), Deque!(E) { // , Serializable
         } finally {
             lock.unlock();
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    override
-    E removeFirst() {
-        E x = pollFirst();
-        if (x is null) {
-            throw new NoSuchElementException();
-        }
-        return x;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    override
-    E removeLast() {
-        E x = pollLast();
-        if (x is null) {
-            throw new NoSuchElementException();
-        }
-        return x;
     }
 
     override
@@ -593,7 +555,7 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E), Deque!(E) { // , Serializable
      * @return the unlinked element
      * @throws InterruptedException if the current thread is interrupted
      */
-    E takeFirst(){
+    override E takeFirst() {
         lock.lock();
         try {
             E x;
@@ -636,8 +598,7 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E), Deque!(E) { // , Serializable
      * @return the unlinked element
      * @throws InterruptedException if the current thread is interrupted
      */
-    E pollFirst(Duration timeout) {
-        // long nanos = unit.toNanos(timeout);
+    override E pollFirst(Duration timeout) {
         lock.lock();
         
         bool isTimeout = false;
@@ -768,128 +729,6 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E), Deque!(E) { // , Serializable
     // BlockingQueue methods
 
     /**
-     * {@inheritDoc}
-     */
-    override
-    bool add(E e) {
-        addLast(e);
-        return true;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    override
-    bool offer(E e) {
-        return offerLast(e);
-    }
-
-    /**
-     * Links the provided element as the last in the queue, waiting until there
-     * is space to do so if the queue is full.
-     *
-     * <p>This method is equivalent to {@link #putLast(Object)}.
-     *
-     * @param e element to link
-     *
-     * @throws NullPointerException if e is null
-     * @throws InterruptedException if the thread is interrupted whilst waiting
-     *         for space
-     */
-    void put(E e){
-        putLast(e);
-    }
-
-    /**
-     * Links the provided element as the last in the queue, waiting up to the
-     * specified time to do so if the queue is full.
-     * <p>
-     * This method is equivalent to {@link #offerLast(Object, long, TimeUnit)}
-     *
-     * @param e         element to link
-     * @param timeout   length of time to wait
-     * @param unit      units that timeout is expressed in
-     *
-     * @return {@code true} if successful, otherwise {@code false}
-     *
-     * @throws NullPointerException if e is null
-     * @throws InterruptedException if the thread is interrupted whilst waiting
-     *         for space
-     */
-    bool offer(E e, Duration timeout) {
-        return offerLast(e, timeout, unit);
-    }
-
-    /**
-     * Retrieves and removes the head of the queue represented by this deque.
-     * This method differs from {@link #poll poll} only in that it throws an
-     * exception if this deque is empty.
-     *
-     * <p>This method is equivalent to {@link #removeFirst() removeFirst}.
-     *
-     * @return the head of the queue represented by this deque
-     * @throws NoSuchElementException if this deque is empty
-     */
-    override
-    E remove() {
-        return removeFirst();
-    }
-
-    override
-    E poll() {
-        return pollFirst();
-    }
-
-    /**
-     * Unlinks the first element in the queue, waiting until there is an element
-     * to unlink if the queue is empty.
-     *
-     * <p>This method is equivalent to {@link #takeFirst()}.
-     *
-     * @return the unlinked element
-     * @throws InterruptedException if the current thread is interrupted
-     */
-    E take(){
-        return takeFirst();
-    }
-
-    /**
-     * Unlinks the first element in the queue, waiting up to the specified time
-     * to do so if the queue is empty.
-     *
-     * <p>This method is equivalent to {@link #pollFirst(long, TimeUnit)}.
-     *
-     * @param timeout   length of time to wait
-     * @param unit      units that timeout is expressed in
-     *
-     * @return the unlinked element
-     * @throws InterruptedException if the current thread is interrupted
-     */
-    E poll(Duration timeout) {
-        return pollFirst(timeout, unit);
-    }
-
-    /**
-     * Retrieves, but does not remove, the head of the queue represented by
-     * this deque.  This method differs from {@link #peek peek} only in that
-     * itempty.
-     *
-     * <p>This method is equivalent to {@link #getFirst() getFirst}.
-     *
-     * @return the head of the queue represented by this deque
-     * @throws NoSuchElementException if this deque is empty
-     */
-    override
-    E element() {
-        return getFirst();
-    }
-
-    override
-    E peek() {
-        return peekFirst();
-    }
-
-    /**
      * Returns the number of additional elements that this deque can ideally
      * (in the absence of memory or resource constraints) accept without
      * blocking. This is always equal to the initial capacity of this deque
@@ -966,44 +805,7 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E), Deque!(E) { // , Serializable
         }
     }
 
-    // Stack methods
-
-    /**
-     * {@inheritDoc}
-     */
-    override
-    void push(E e) {
-        addFirst(e);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    override
-    E pop() {
-        return removeFirst();
-    }
-
     // Collection methods
-
-    /**
-     * Removes the first occurrence of the specified element from this deque.
-     * If the deque does not contain the element, it is unchanged.
-     * More formally, removes the first element {@code e} such that
-     * {@code o == e} (if such an element exists).
-     * Returns {@code true} if this deque contained the specified element
-     * (or equivalently, if this deque changed as a result of the call).
-     *
-     * <p>This method is equivalent to
-     * {@link #removeFirstOccurrence(Object) removeFirstOccurrence}.
-     *
-     * @param o element to be removed from this deque, if present
-     * @return {@code true} if this deque changed as a result of the call
-     */
-    override
-    bool remove(E o) {
-        return removeFirstOccurrence(o);
-    }
 
     /**
      * Returns the number of elements in this deque.
@@ -1166,7 +968,8 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E), Deque!(E) { // , Serializable
             }
             first = last = null;
             count = 0;
-            notFull.signalAll();
+            // notFull.signalAll();
+            notFull.notifyAll();
         } finally {
             lock.unlock();
         }
@@ -1299,14 +1102,23 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E), Deque!(E) { // , Serializable
             if (next is null) {
                 throw new NoSuchElementException();
             }
+            return nextItem;
+            // lastRet = next;
+            // E x = nextItem;
+            // advance();
+            // return x;
+        }
+        
+        void popFront() {
+            if (next is null) {
+                throw new NoSuchElementException();
+            }
             lastRet = next;
-            E x = nextItem;
             advance();
-            return x;
         }
 
         // override
-        void popFront() {
+        void remove() {
             Node!(E) n = lastRet;
             if (n is null) {
                 throw new IllegalStateException();
@@ -1439,7 +1251,9 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E), Deque!(E) { // , Serializable
     bool hasTakeWaiters() {
         lock.lock();
         try {
-            return lock.hasWaiters(notEmpty);
+            // return lock.hasWaiters(notEmpty);
+            implementationMissing(false);
+            return false;
         } finally {
             lock.unlock();
         }
@@ -1454,7 +1268,9 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E), Deque!(E) { // , Serializable
     int getTakeQueueLength() {
         lock.lock();
         try {
-           return lock.getWaitQueueLength(notEmpty);
+        //    return lock.getWaitQueueLength(notEmpty);
+            implementationMissing(false);
+            return 0;
         } finally {
             lock.unlock();
         }
@@ -1467,7 +1283,8 @@ class LinkedBlockingDeque(E) : AbstractQueue!(E), Deque!(E) { // , Serializable
     void interuptTakeWaiters() {
         lock.lock();
         try {
-           lock.interruptWaiters(notEmpty);
+        //    lock.interruptWaiters(notEmpty);
+            notEmpty.notifyAll();
         } finally {
             lock.unlock();
         }

@@ -24,6 +24,7 @@ import hunt.pool.BaseObject;
 
 import hunt.text.StringBuilder;
 import hunt.util.Common;
+import hunt.util.ObjectUtils;
 
 
 /**
@@ -749,4 +750,6 @@ abstract class BaseObjectPoolConfig : BaseObject, Cloneable {
         builder.append(", jmxNameBase=");
         builder.append(jmxNameBase);
     }
+
+    mixin CloneMemberTemplate!(typeof(this), TopLevel.yes);
 }

@@ -139,9 +139,8 @@ class GenericObjectPoolConfig : BaseObjectPoolConfig {
         this.minIdle = minIdle;
     }
 
-    // override
+    override
     GenericObjectPoolConfig clone() {
-    // Object clone() {
         try {
             return cast(GenericObjectPoolConfig) super.clone();
         } catch (CloneNotSupportedException e) {

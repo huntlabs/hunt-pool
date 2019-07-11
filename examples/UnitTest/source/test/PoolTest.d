@@ -80,16 +80,16 @@ private class PooledFooFactory : PooledObjectFactory!(Foo) {
     private enum long VALIDATION_WAIT_IN_MILLIS = 1000;
 
     override
-    PooledObject!(Foo) makeObject(){
+    IPooledObject makeObject(){
         return new DefaultPooledObject!(Foo)(new Foo());
     }
 
     override
-    void destroyObject(PooledObject!(Foo) pooledObject){
+    void destroyObject(IPooledObject pooledObject){
     }
 
     override
-    bool validateObject(PooledObject!(Foo) pooledObject) {
+    bool validateObject(IPooledObject pooledObject) {
         try {
             Thread.sleep(VALIDATION_WAIT_IN_MILLIS.msecs);
         } catch (InterruptedException e) {
@@ -99,10 +99,10 @@ private class PooledFooFactory : PooledObjectFactory!(Foo) {
     }
 
     override
-    void activateObject(PooledObject!(Foo) pooledObject){
+    void activateObject(IPooledObject pooledObject){
     }
 
     override
-    void passivateObject(PooledObject!(Foo) pooledObject){
+    void passivateObject(IPooledObject pooledObject){
     }
 }

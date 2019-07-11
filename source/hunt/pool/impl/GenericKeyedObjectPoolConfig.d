@@ -18,9 +18,8 @@ module hunt.pool.impl.GenericKeyedObjectPoolConfig;
 
 import hunt.pool.impl.BaseObjectPoolConfig;
 
-import hunt.text.StringBuilder;
-
 import hunt.Exceptions;
+import hunt.text.StringBuilder;
 
 /**
  * A simple "struct" encapsulating the configuration for a
@@ -178,7 +177,7 @@ class GenericKeyedObjectPoolConfig : BaseObjectPoolConfig {
         this.maxIdlePerKey = maxIdlePerKey;
     }
 
-    // override
+    override
     GenericKeyedObjectPoolConfig clone() {
         try {
             return cast(GenericKeyedObjectPoolConfig) super.clone();
