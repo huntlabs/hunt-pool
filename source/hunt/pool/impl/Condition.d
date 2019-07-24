@@ -16,9 +16,9 @@
 module hunt.pool.impl.Condition;
 
 
-public import core.sync.exception;
-public import hunt.pool.impl.Mutex;
-public import core.time;
+import core.sync.exception;
+import hunt.pool.impl.Mutex;
+import core.time;
 
 version (Windows)
 {
@@ -462,7 +462,7 @@ private:
 version (unittest)
 {
     private import core.thread;
-    private import core.sync.mutex;
+    private import hunt.pool.impl.Mutex;
     private import core.sync.semaphore;
 
 
