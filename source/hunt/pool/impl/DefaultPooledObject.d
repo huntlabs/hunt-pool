@@ -52,7 +52,7 @@ class DefaultPooledObject(T) : PooledObject!(T) {
 
     private T object;
     private PooledObjectState state = PooledObjectState.IDLE; // @GuardedBy("this") to ensure transitions are valid
-    private long createTime; // = DateTimeHelper.currentTimeMillis();
+    private long createTime; // = DateTime.currentTimeMillis();
     private shared long lastBorrowTime; 
     private shared long lastUseTime;
     private shared long lastReturnTime;
@@ -68,7 +68,7 @@ class DefaultPooledObject(T) : PooledObject!(T) {
      * @param object The object to wrap
      */
     this(T object) {
-        createTime = DateTimeHelper.currentTimeMillis();
+        createTime = DateTime.currentTimeMillis();
         lastBorrowTime = createTime;
         lastUseTime = createTime;
         lastReturnTime = createTime;
@@ -96,15 +96,15 @@ class DefaultPooledObject(T) : PooledObject!(T) {
         if (rTime > bTime) {
             return rTime - bTime;
         }
-        return DateTimeHelper.currentTimeMillis() - bTime;
+        return DateTime.currentTimeMillis() - bTime;
     }
 
     override
     long getIdleTimeMillis() {
-        long elapsed = DateTimeHelper.currentTimeMillis() - lastReturnTime;
+        long elapsed = DateTime.currentTimeMillis() - lastReturnTime;
         // elapsed may be negative if:
         // - another thread updates lastReturnTime during the calculation window
-        // - DateTimeHelper.currentTimeMillis() is not monotonic (e.g. system time is set back)
+        // - DateTime.currentTimeMillis() is not monotonic (e.g. system time is set back)
         return elapsed >= 0 ? elapsed : 0;
     }
 
@@ -207,7 +207,7 @@ class DefaultPooledObject(T) : PooledObject!(T) {
     bool allocate() { // synchronized
         if (state == PooledObjectState.IDLE) {
             state = PooledObjectState.ALLOCATED;
-            lastBorrowTime = DateTimeHelper.currentTimeMillis();
+            lastBorrowTime = DateTime.currentTimeMillis();
             lastUseTime = lastBorrowTime;
             borrowedCount.increment();
             if (logAbandoned) {
@@ -235,7 +235,7 @@ class DefaultPooledObject(T) : PooledObject!(T) {
         if (state == PooledObjectState.ALLOCATED ||
                 state == PooledObjectState.RETURNING) {
             state = PooledObjectState.IDLE;
-            lastReturnTime = DateTimeHelper.currentTimeMillis();
+            lastReturnTime = DateTime.currentTimeMillis();
             borrowedBy.clear();
             return true;
         }
@@ -253,7 +253,7 @@ class DefaultPooledObject(T) : PooledObject!(T) {
 
     override
     void use() {
-        lastUseTime = DateTimeHelper.currentTimeMillis();
+        lastUseTime = DateTime.currentTimeMillis();
         usedBy.fillInStackTrace();
     }
 

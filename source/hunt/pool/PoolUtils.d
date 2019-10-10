@@ -1373,7 +1373,7 @@ class PoolUtils {
          */
         this(float factor) {
             this.factor = factor;
-            nextShrink = DateTimeHelper.currentTimeMillis() + cast(long) (900000 * factor); // now
+            nextShrink = DateTime.currentTimeMillis() + cast(long) (900000 * factor); // now
                                                                                 // +
                                                                                 // 15
                                                                                 // min
@@ -1471,7 +1471,7 @@ class PoolUtils {
         override
         void returnObject(T obj) {
             bool discard = false;
-            long now = DateTimeHelper.currentTimeMillis();
+            long now = DateTime.currentTimeMillis();
             synchronized (pool) {
                 if (factor.getNextShrink() < now) { // XXX: Pool 3: move test
                                                     // out of sync block
@@ -1636,7 +1636,7 @@ class PoolUtils {
         override
         void returnObject(K key, V obj){
             bool discard = false;
-            long now = DateTimeHelper.currentTimeMillis();
+            long now = DateTime.currentTimeMillis();
             ErodingFactor factor = getErodingFactor(key);
             synchronized (keyedPool) {
                 if (factor.getNextShrink() < now) {

@@ -444,7 +444,7 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
         bool blockWhenExhausted = getBlockWhenExhausted();
 
         bool isCreated;
-        long waitTime = DateTimeHelper.currentTimeMillis();
+        long waitTime = DateTime.currentTimeMillis();
 
         while (p is null) {
             isCreated = false;
@@ -519,7 +519,7 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
             }
         }
 
-        updateStatsBorrow(p, DateTimeHelper.currentTimeMillis() - waitTime);
+        updateStatsBorrow(p, DateTime.currentTimeMillis() - waitTime);
 
         PooledObject!(T) pp = cast(PooledObject!(T))p;
 
@@ -871,7 +871,7 @@ tracef("destroyedByEvictorCount = %d", destroyedByEvictorCount)                 
             localMaxTotal = int.max;
         }
 
-        long localStartTimeMillis = DateTimeHelper.currentTimeMillis();
+        long localStartTimeMillis = DateTime.currentTimeMillis();
         long localMaxWaitTimeMillis = max(getMaxWaitMillis(), 0);
 
         // Flag that indicates if create should:
@@ -910,7 +910,7 @@ tracef("destroyedByEvictorCount = %d", destroyedByEvictorCount)                 
             // Do not block more if maxWaitTimeMillis is set.
             if (isCreated is null &&
                 (localMaxWaitTimeMillis > 0 &&
-                 DateTimeHelper.currentTimeMillis() - localStartTimeMillis >= localMaxWaitTimeMillis)) {
+                 DateTime.currentTimeMillis() - localStartTimeMillis >= localMaxWaitTimeMillis)) {
                 isCreated = Boolean.FALSE;
             }
         }
@@ -1082,7 +1082,7 @@ tracef("destroyedByEvictorCount = %d", destroyedByEvictorCount)                 
      */
     private void removeAbandoned(AbandonedConfig ac) {
         // Generate a list of abandoned objects to remove
-        long now = DateTimeHelper.currentTimeMillis();
+        long now = DateTime.currentTimeMillis();
         long timeout = now - (ac.getRemoveAbandonedTimeout() * 1000L);
         ArrayList!(PooledObject!(T)) toRemove = new ArrayList!(PooledObject!(T))();
 
