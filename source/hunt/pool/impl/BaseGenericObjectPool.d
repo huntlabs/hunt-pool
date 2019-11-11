@@ -1031,17 +1031,17 @@ abstract class BaseGenericObjectPool : BaseObject {
     /**
      * Unregisters this pool's MBean.
      */
-    void jmxUnregister() {
-        // if (objectName !is null) {
-        //     try {
-        //         ManagementFactory.getPlatformMBeanServer().unregisterMBean(
-        //                 objectName);
-        //     } catch (MBeanRegistrationException | InstanceNotFoundException e) {
-        //         swallowException(e);
-        //     }
-        // }
-        implementationMissing(false);
-    }
+    // void jmxUnregister() {
+    //     // if (objectName !is null) {
+    //     //     try {
+    //     //         ManagementFactory.getPlatformMBeanServer().unregisterMBean(
+    //     //                 objectName);
+    //     //     } catch (MBeanRegistrationException | InstanceNotFoundException e) {
+    //     //         swallowException(e);
+    //     //     }
+    //     // }
+    //     implementationMissing(false);
+    // }
 
     /**
      * Registers the pool with the platform MBean server.

@@ -132,7 +132,7 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
         allObjects = new HashMap!(IdentityWrapper!(T), PooledObject!(T))();
 
         if (factory is null) {
-            jmxUnregister(); // tidy up
+            // jmxUnregister(); // tidy up
             throw new IllegalArgumentException("factory may not be null");
         }
         this.factory = factory;
@@ -522,8 +522,10 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
         updateStatsBorrow(p, DateTime.currentTimeMillis() - waitTime);
 
         PooledObject!(T) pp = cast(PooledObject!(T))p;
+        T r = pp.getObject();
+        version(HUNT_DEBUG) infof("%s, object: %s", typeid(T), r.toString());
 
-        return pp.getObject();
+        return r;
     }
 
     /**
@@ -543,8 +545,8 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
      * but notified via a {@link SwallowedExceptionListener}.
      * </p>
      */
-    // // override
     void returnObject(T obj) {
+        version(HUNT_DEBUG) infof("%s, object: %s", typeid(T), obj.toString());
         PooledObject!(T) p = allObjects.get(new IdentityWrapper!T(obj));
 
         if (p is null) {
@@ -719,7 +721,7 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
             // This clear removes any idle objects
             clear();
 
-            jmxUnregister();
+            // jmxUnregister();
 
             // Release any threads that were waiting for an object
             idleObjects.interuptTakeWaiters();

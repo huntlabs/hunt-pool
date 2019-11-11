@@ -114,7 +114,7 @@ class GenericKeyedObjectPool(K, T) : BaseGenericObjectPool!(T),
         super(config, ONAME_BASE, config.getJmxNamePrefix());
 
         if (factory is null) {
-            jmxUnregister(); // tidy up
+            // jmxUnregister(); // tidy up
             throw new IllegalArgumentException("factory may not be null");
         }
         this.factory = factory;
@@ -703,7 +703,7 @@ class GenericKeyedObjectPool(K, T) : BaseGenericObjectPool!(T),
             // This clear removes any idle objects
             clear();
 
-            jmxUnregister();
+            // jmxUnregister();
 
             // Release any threads that were waiting for an object
             Iterator!(ObjectDeque!(T)) iter = poolMap.values().iterator();
