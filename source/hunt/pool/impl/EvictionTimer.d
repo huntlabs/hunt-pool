@@ -17,13 +17,6 @@
 module hunt.pool.impl.EvictionTimer;
 
 import hunt.pool.impl.BaseGenericObjectPool;
-// import java.security.AccessController;
-// import java.security.PrivilegedAction;
-// import java.util.TimerTask;
-// import java.util.concurrent.ScheduledFuture;
-// import java.util.concurrent.ScheduledThreadPoolExecutor;
-// import java.util.concurrent.ThreadFactory;
-// import java.util.concurrent.TimeUnit;
 
 import hunt.concurrency.thread;
 import hunt.concurrency.Delayed;
@@ -32,6 +25,7 @@ import hunt.concurrency.ScheduledThreadPoolExecutor;
 import hunt.concurrency.ThreadFactory;
 
 import hunt.Exceptions;
+import hunt.logging.ConsoleLogger;
 import hunt.util.Common;
 import hunt.text.StringBuilder;
 
@@ -112,8 +106,11 @@ class EvictionTimer {
         if (executor !is null && executor.getQueue().isEmpty()) {
             executor.shutdown();
             try {
-                executor.awaitTermination(timeout);
+                // executor.awaitTermination(timeout);
+                // TODO: Tasks pending completion -@zhangxueping at 2019-12-06T16:11:54+08:00
+                // 
             } catch (InterruptedException e) {
+                version(HUNT_DEBUG) warning(e.msg);
                 // Swallow
                 // Significant API changes would be required to propagate this
             }

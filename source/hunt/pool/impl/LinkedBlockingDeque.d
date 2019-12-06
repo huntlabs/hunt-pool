@@ -818,12 +818,7 @@ class LinkedBlockingDeque(E) : AbstractDeque!(E) { // , Serializable
      */
     override
     int size() {
-        lock.lock();
-        try {
-            return count;
-        } finally {
-            lock.unlock();
-        }
+        return count;
     }
 
     /**

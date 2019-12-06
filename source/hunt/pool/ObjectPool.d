@@ -180,6 +180,5 @@ interface ObjectPool(T) : Closeable {
      * Implementations should silently fail if not all resources can be freed.
      * </p>
      */
-    override
     void close();
 }

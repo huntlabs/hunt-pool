@@ -144,7 +144,7 @@ class GenericObjectPoolConfig : BaseObjectPoolConfig {
         try {
             return cast(GenericObjectPoolConfig) super.clone();
         } catch (CloneNotSupportedException e) {
-            throw new AssertionError(); // Can't happen
+            throw new AssertionError(); // Never happen
         }
     }
 

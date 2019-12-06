@@ -175,7 +175,7 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
      *
      * @see #setMaxIdle
      */
-    // // override
+    // override
     int getMaxIdle() {
         return maxIdle;
     }
@@ -239,7 +239,7 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
      * @see #setMaxIdle(int)
      * @see #setTimeBetweenEvictionRunsMillis(long)
      */
-    // // override
+    // override
     int getMinIdle() {
         int maxIdleSave = getMaxIdle();
         if (this.minIdle > maxIdleSave) {
@@ -254,7 +254,7 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
      * @return true if this pool is configured to detect and remove
      * abandoned objects
      */
-    // // override
+    // override
     bool isAbandonedConfig() {
         return abandonedConfig !is null;
     }
@@ -267,7 +267,7 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
      *
      * @see AbandonedConfig#getLogAbandoned()
      */
-    // // override
+    // override
     bool getLogAbandoned() {
         AbandonedConfig ac = this.abandonedConfig;
         return ac !is null && ac.getLogAbandoned();
@@ -282,7 +282,7 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
      *
      * @see AbandonedConfig#getRemoveAbandonedOnBorrow()
      */
-    // // override
+    // override
     bool getRemoveAbandonedOnBorrow() {
         AbandonedConfig ac = this.abandonedConfig;
         return ac !is null && ac.getRemoveAbandonedOnBorrow();
@@ -296,7 +296,7 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
      *
      * @see AbandonedConfig#getRemoveAbandonedOnMaintenance()
      */
-    // // override
+    // override
     bool getRemoveAbandonedOnMaintenance() {
         AbandonedConfig ac = this.abandonedConfig;
         return ac !is null && ac.getRemoveAbandonedOnMaintenance();
@@ -311,7 +311,7 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
      *
      * @see AbandonedConfig#getRemoveAbandonedTimeout()
      */
-    // // override
+    // override
     int getRemoveAbandonedTimeout() {
         AbandonedConfig ac = this.abandonedConfig;
         return ac !is null ? ac.getRemoveAbandonedTimeout() : int.max;
@@ -373,7 +373,7 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
      * {@inheritDoc}
      * </p>
      */
-    // // override
+    // override
     T borrowObject(){
         return borrowObject(getMaxWaitMillis());
     }
@@ -427,7 +427,9 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
      * @throws Exception if an object instance cannot be returned due to an
      *                   error
      */
-    T borrowObject(long borrowMaxWaitMillis){
+    T borrowObject(long borrowMaxWaitMillis) {
+        version(HUNT_POOL_DEBUG) infof("%s, Total: %d, Active: %d, Idle: %d, Waiters: %d", typeid(T), 
+            getMaxTotal(), getNumActive(), getNumIdle(), getNumWaiters());
         assertOpen();
 
         AbandonedConfig ac = this.abandonedConfig;
@@ -498,6 +500,8 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
                     try {
                         validate = factory.validateObject(p);
                     } catch (Throwable t) {
+                        warning(t.msg);
+                        version(HUNT_DEBUG) warning(t);
                         PoolUtils.checkRethrow(t);
                         validationThrowable = t;
                     }
@@ -522,10 +526,11 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
         updateStatsBorrow(p, DateTime.currentTimeMillis() - waitTime);
 
         PooledObject!(T) pp = cast(PooledObject!(T))p;
-        T r = pp.getObject();
-        version(HUNT_DEBUG) infof("%s, object: %s", typeid(T), r.toString());
+        T obj = pp.getObject();
+        version(HUNT_DEBUG) infof("object: %s, Total: %d, Active: %d, Idle: %d, Waiters: %d", 
+            obj.toString(), getMaxTotal(), getNumActive(), getNumIdle(), getNumWaiters());
 
-        return r;
+        return obj;
     }
 
     /**
@@ -546,7 +551,11 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
      * </p>
      */
     void returnObject(T obj) {
-        version(HUNT_DEBUG) infof("%s, object: %s", typeid(T), obj.toString());
+        version(HUNT_POOL_DEBUG) {
+            infof("%s, object: %s, Active: %d/%d, Waiters: %d", 
+                typeid(T), obj.toString(), getNumActive(), getMaxTotal(),  getNumWaiters());
+        }
+
         PooledObject!(T) p = allObjects.get(new IdentityWrapper!T(obj));
 
         if (p is null) {
@@ -620,6 +629,9 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
             }
         }
         updateStatsReturn(activeTime);
+        
+        version(HUNT_DEBUG) infof("object: %s, Total: %d, Active: %d, Idle: %d, Waiters: %d", 
+            obj.toString(), getMaxTotal(), getNumActive(), getNumIdle(), getNumWaiters());
     }
 
     /**
@@ -633,7 +645,7 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
      *                               object
      * @throws IllegalStateException if obj does not belong to this pool
      */
-    // // override
+    // override
     void invalidateObject(T obj){
         PooledObject!(T) p = allObjects.get(new IdentityWrapper!T(obj));
         if (p is null) {
@@ -669,7 +681,7 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
      * but notified via a {@link SwallowedExceptionListener}.</li>
      * </ul>
      */
-    // // override
+    // override
     void clear() {
         IPooledObject p = idleObjects.poll();
 
@@ -683,7 +695,7 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
         }
     }
 
-    // // override
+    // override
     int getNumActive() {
         return allObjects.size() - idleObjects.size();
     }
