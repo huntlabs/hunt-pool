@@ -809,7 +809,7 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
                         evict = false;
                     }
 
-tracef("evict=%s", evict);
+                    version(HUNT_REDIS_DEBUG) tracef("evict=%s", evict);
 
                     if (evict) {
                         destroy(underTest);
@@ -844,7 +844,7 @@ tracef("evict=%s", evict);
                         }
                     }
 
-tracef("destroyedByEvictorCount = %d", destroyedByEvictorCount)                    ;
+version(HUNT_REDIS_DEBUG) tracef("destroyedByEvictorCount = %d", destroyedByEvictorCount)                    ;
                 }
             }
         }
