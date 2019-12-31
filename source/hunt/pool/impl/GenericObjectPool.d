@@ -943,8 +943,13 @@ version(HUNT_REDIS_DEBUG) tracef("destroyedByEvictorCount = %d", destroyedByEvic
             synchronized (makeObjectCountLock) {
                 makeObjectCount--;
                 // makeObjectCountLock.notifyAll();
-                LockSupport.unpark();
+                // BUG: Reported defects -@Administrator at 2019-12-31T18:16:45+08:00
+                // https://github.com/huntlabs/hunt-framework/issues/138
+                // LockSupport.unpark();
             }
+            // TODO: Tasks pending completion -@Administrator at 2019-12-31T18:17:13+08:00
+            // to check this
+            LockSupport.unpark();
         }
 
         AbandonedConfig ac = this.abandonedConfig;
@@ -1046,8 +1051,7 @@ version(HUNT_REDIS_DEBUG) tracef("destroyedByEvictorCount = %d", destroyedByEvic
     void addObject(){
         assertOpen();
         if (factory is null) {
-            throw new IllegalStateException(
-                    "Cannot add objects without a factory.");
+            throw new IllegalStateException("Cannot add objects without a factory.");
         }
         PooledObject!(T) p = create();
         addIdleObject(p);
