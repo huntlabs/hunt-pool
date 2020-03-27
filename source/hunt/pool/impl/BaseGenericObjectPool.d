@@ -1360,7 +1360,7 @@ class IdentityWrapper(T) {
 
     override
     size_t toHash() @trusted nothrow {
-        return instance.toHash();
+        return (cast(Object)instance).toHash();
     }
 
     override
@@ -1382,7 +1382,7 @@ class IdentityWrapper(T) {
     string toString() {
         StringBuilder builder = new StringBuilder();
         builder.append("IdentityWrapper [instance=");
-        builder.append(instance);
+        builder.append(cast(Object)instance);
         builder.append("]");
         return builder.toString();
     }

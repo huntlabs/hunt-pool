@@ -27,7 +27,10 @@ import hunt.util.Common;
 
 interface IPooledObject {
 
-    Object getObject();
+    // Object getObject();
+    TypeInfo objectType();
+
+    string objectToString();
 
     /**
      * Obtains the time (using the same basis as

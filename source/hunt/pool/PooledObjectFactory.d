@@ -73,70 +73,70 @@ import hunt.pool.PooledObject;
  */
 interface PooledObjectFactory(T) {
 
-  /**
-   * Creates an instance that can be served by the pool and wrap it in a
-   * {@link PooledObject} to be managed by the pool.
-   *
-   * @return a {@code PooledObject} wrapping an instance that can be served by the pool
-   *
-   * @throws Exception if there is a problem creating a new instance,
-   *    this will be propagated to the code requesting an object.
-   */
-  IPooledObject makeObject();
+    /**
+     * Creates an instance that can be served by the pool and wrap it in a
+     * {@link PooledObject} to be managed by the pool.
+     *
+     * @return a {@code PooledObject} wrapping an instance that can be served by the pool
+     *
+     * @throws Exception if there is a problem creating a new instance,
+     *    this will be propagated to the code requesting an object.
+     */
+    IPooledObject makeObject();
 
-  /**
-   * Destroys an instance no longer needed by the pool.
-   * <p>
-   * It is important for implementations of this method to be aware that there
-   * is no guarantee about what state <code>obj</code> will be in and the
-   * implementation should be prepared to handle unexpected errors.
-   * </p>
-   * <p>
-   * Also, an implementation must take in to consideration that instances lost
-   * to the garbage collector may never be destroyed.
-   * </p>
-   *
-   * @param p a {@code PooledObject} wrapping the instance to be destroyed
-   *
-   * @throws Exception should be avoided as it may be swallowed by
-   *    the pool implementation.
-   *
-   * @see #validateObject
-   * @see ObjectPool#invalidateObject
-   */
-  void destroyObject(IPooledObject p);
+    /**
+     * Destroys an instance no longer needed by the pool.
+     * <p>
+     * It is important for implementations of this method to be aware that there
+     * is no guarantee about what state <code>obj</code> will be in and the
+     * implementation should be prepared to handle unexpected errors.
+     * </p>
+     * <p>
+     * Also, an implementation must take in to consideration that instances lost
+     * to the garbage collector may never be destroyed.
+     * </p>
+     *
+     * @param p a {@code PooledObject} wrapping the instance to be destroyed
+     *
+     * @throws Exception should be avoided as it may be swallowed by
+     *    the pool implementation.
+     *
+     * @see #validateObject
+     * @see ObjectPool#invalidateObject
+     */
+    void destroyObject(IPooledObject p);
 
-  /**
-   * Ensures that the instance is safe to be returned by the pool.
-   *
-   * @param p a {@code PooledObject} wrapping the instance to be validated
-   *
-   * @return <code>false</code> if <code>obj</code> is not valid and should
-   *         be dropped from the pool, <code>true</code> otherwise.
-   */
-  bool validateObject(IPooledObject p);
+    /**
+     * Ensures that the instance is safe to be returned by the pool.
+     *
+     * @param p a {@code PooledObject} wrapping the instance to be validated
+     *
+     * @return <code>false</code> if <code>obj</code> is not valid and should
+     *         be dropped from the pool, <code>true</code> otherwise.
+     */
+    bool validateObject(IPooledObject p);
 
-  /**
-   * Reinitializes an instance to be returned by the pool.
-   *
-   * @param p a {@code PooledObject} wrapping the instance to be activated
-   *
-   * @throws Exception if there is a problem activating <code>obj</code>,
-   *    this exception may be swallowed by the pool.
-   *
-   * @see #destroyObject
-   */
-  void activateObject(IPooledObject p);
+    /**
+     * Reinitializes an instance to be returned by the pool.
+     *
+     * @param p a {@code PooledObject} wrapping the instance to be activated
+     *
+     * @throws Exception if there is a problem activating <code>obj</code>,
+     *    this exception may be swallowed by the pool.
+     *
+     * @see #destroyObject
+     */
+    void activateObject(IPooledObject p);
 
-  /**
-   * Uninitializes an instance to be returned to the idle object pool.
-   *
-   * @param p a {@code PooledObject} wrapping the instance to be passivated
-   *
-   * @throws Exception if there is a problem passivating <code>obj</code>,
-   *    this exception may be swallowed by the pool.
-   *
-   * @see #destroyObject
-   */
-  void passivateObject(IPooledObject p);
+    /**
+     * Uninitializes an instance to be returned to the idle object pool.
+     *
+     * @param p a {@code PooledObject} wrapping the instance to be passivated
+     *
+     * @throws Exception if there is a problem passivating <code>obj</code>,
+     *    this exception may be swallowed by the pool.
+     *
+     * @see #destroyObject
+     */
+    void passivateObject(IPooledObject p);
 }

@@ -30,8 +30,6 @@ import hunt.Exceptions;
 import hunt.text.StringBuilder;
 import hunt.util.DateTime;
 
-
-
 import std.algorithm;
 import std.conv;
 
@@ -53,7 +51,7 @@ class DefaultPooledObject(T) : PooledObject!(T) {
     private T object;
     private PooledObjectState state = PooledObjectState.IDLE; // @GuardedBy("this") to ensure transitions are valid
     private long createTime; // = DateTime.currentTimeMillis();
-    private shared long lastBorrowTime; 
+    private shared long lastBorrowTime;
     private shared long lastUseTime;
     private shared long lastReturnTime;
     private shared bool logAbandoned = false;
@@ -72,23 +70,29 @@ class DefaultPooledObject(T) : PooledObject!(T) {
         lastBorrowTime = createTime;
         lastUseTime = createTime;
         lastReturnTime = createTime;
-        borrowedBy = NoOpCallStack.INSTANCE;    
-        usedBy = NoOpCallStack.INSTANCE;    
+        borrowedBy = NoOpCallStack.INSTANCE;
+        usedBy = NoOpCallStack.INSTANCE;
         this.object = object;
     }
 
-    override
-    T getObject() {
+    
+    TypeInfo objectType() {
+        return typeid(object);
+    }
+
+    string objectToString() {
+        return (cast(Object)object).toString();
+    }
+
+    override T getObject() {
         return object;
     }
 
-    override
-    long getCreateTime() {
+    override long getCreateTime() {
         return createTime;
     }
 
-    override
-    long getActiveTimeMillis() {
+    override long getActiveTimeMillis() {
         // Take copies to avoid threading issues
         long rTime = lastReturnTime;
         long bTime = lastBorrowTime;
@@ -99,8 +103,7 @@ class DefaultPooledObject(T) : PooledObject!(T) {
         return DateTime.currentTimeMillis() - bTime;
     }
 
-    override
-    long getIdleTimeMillis() {
+    override long getIdleTimeMillis() {
         long elapsed = DateTime.currentTimeMillis() - lastReturnTime;
         // elapsed may be negative if:
         // - another thread updates lastReturnTime during the calculation window
@@ -108,13 +111,11 @@ class DefaultPooledObject(T) : PooledObject!(T) {
         return elapsed >= 0 ? elapsed : 0;
     }
 
-    override
-    long getLastBorrowTime() {
+    override long getLastBorrowTime() {
         return lastBorrowTime;
     }
 
-    override
-    long getLastReturnTime() {
+    override long getLastReturnTime() {
         return lastReturnTime;
     }
 
@@ -135,8 +136,7 @@ class DefaultPooledObject(T) : PooledObject!(T) {
      *
      * @return the last time this object was used
      */
-    override
-    long getLastUsedTime() {
+    override long getLastUsedTime() {
         TrackedUse tu = cast(TrackedUse) object;
         if (tu !is null) {
             return max(tu.getLastUsed(), lastUseTime);
@@ -144,8 +144,7 @@ class DefaultPooledObject(T) : PooledObject!(T) {
         return lastUseTime;
     }
 
-    override
-    int opCmp(IPooledObject other) {
+    override int opCmp(IPooledObject other) {
         long lastActiveDiff = this.getLastReturnTime() - other.getLastReturnTime();
         if (lastActiveDiff == 0) {
             // Make sure the natural ordering is broadly consistent with equals
@@ -156,14 +155,13 @@ class DefaultPooledObject(T) : PooledObject!(T) {
             return cast(int)(this.toHash() - other.toHash());
         }
         // handle int overflow
-        return cast(int)min(max(lastActiveDiff, int.min), int.max);
+        return cast(int) min(max(lastActiveDiff, int.min), int.max);
     }
 
-    override
-    string toString() {
+    override string toString() {
         StringBuilder result = new StringBuilder();
         result.append("Object: ");
-        result.append(object.toString());
+        result.append((cast(Object) object).toString());
         result.append(", State: ");
         synchronized (this) {
             result.append(state.to!string());
@@ -172,8 +170,7 @@ class DefaultPooledObject(T) : PooledObject!(T) {
         // TODO add other attributes
     }
 
-    override
-    bool startEvictionTest() { // synchronized 
+    override bool startEvictionTest() { // synchronized 
         if (state == PooledObjectState.IDLE) {
             state = PooledObjectState.EVICTION;
             return true;
@@ -182,8 +179,7 @@ class DefaultPooledObject(T) : PooledObject!(T) {
         return false;
     }
 
-    override
-    bool endEvictionTest( // synchronized 
+    override bool endEvictionTest( // synchronized 
             Deque!(IPooledObject) idleQueue) {
         if (state == PooledObjectState.EVICTION) {
             state = PooledObjectState.IDLE;
@@ -203,8 +199,7 @@ class DefaultPooledObject(T) : PooledObject!(T) {
      *
      * @return {@code true} if the original state was {@link PooledObjectState#IDLE IDLE}
      */
-    override
-    bool allocate() { // synchronized
+    override bool allocate() { // synchronized
         if (state == PooledObjectState.IDLE) {
             state = PooledObjectState.ALLOCATED;
             lastBorrowTime = DateTime.currentTimeMillis();
@@ -230,10 +225,8 @@ class DefaultPooledObject(T) : PooledObject!(T) {
      *
      * @return {@code true} if the state was {@link PooledObjectState#ALLOCATED ALLOCATED}
      */
-    override
-    bool deallocate() { // synchronized
-        if (state == PooledObjectState.ALLOCATED ||
-                state == PooledObjectState.RETURNING) {
+    override bool deallocate() { // synchronized
+        if (state == PooledObjectState.ALLOCATED || state == PooledObjectState.RETURNING) {
             state = PooledObjectState.IDLE;
             lastReturnTime = DateTime.currentTimeMillis();
             borrowedBy.clear();
@@ -246,13 +239,11 @@ class DefaultPooledObject(T) : PooledObject!(T) {
     /**
      * Sets the state to {@link PooledObjectState#INVALID INVALID}
      */
-    override
-    void invalidate() { // synchronized
+    override void invalidate() { // synchronized
         state = PooledObjectState.INVALID;
     }
 
-    override
-    void use() {
+    override void use() {
         lastUseTime = DateTime.currentTimeMillis();
         usedBy.fillInStackTrace();
     }
@@ -270,29 +261,25 @@ class DefaultPooledObject(T) : PooledObject!(T) {
      * Returns the state of this object.
      * @return state
      */
-    override
-    PooledObjectState getState() { // synchronized
+    override PooledObjectState getState() { // synchronized
         return state;
     }
 
     /**
      * Marks the pooled object as abandoned.
      */
-    override
-    void markAbandoned() { // synchronized
+    override void markAbandoned() { // synchronized
         state = PooledObjectState.ABANDONED;
     }
 
     /**
      * Marks the object as returning to the pool.
      */
-    override
-    void markReturning() { // synchronized
+    override void markReturning() { // synchronized
         state = PooledObjectState.RETURNING;
     }
 
-    override
-    void setLogAbandoned(bool logAbandoned) {
+    override void setLogAbandoned(bool logAbandoned) {
         this.logAbandoned = logAbandoned;
     }
 
@@ -316,7 +303,6 @@ class DefaultPooledObject(T) : PooledObject!(T) {
         //     false, requireFullStackTrace);
     }
 
-    
     bool opEquals(IPooledObject obj) {
         return opEquals(cast(Object) obj);
     }

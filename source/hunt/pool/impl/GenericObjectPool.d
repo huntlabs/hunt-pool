@@ -527,7 +527,7 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
 
         PooledObject!(T) pp = cast(PooledObject!(T))p;
         T obj = pp.getObject();
-        version(HUNT_DEBUG) infof("object: %s, Total: %d, Active: %d, Idle: %d, Waiters: %d", 
+        version(HUNT_POOL_DEBUG) infof("object: %s, Total: %d, Active: %d, Idle: %d, Waiters: %d", 
             obj.toString(), getMaxTotal(), getNumActive(), getNumIdle(), getNumWaiters());
 
         return obj;
@@ -630,8 +630,11 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
         }
         updateStatsReturn(activeTime);
         
-        version(HUNT_DEBUG) infof("object: %s, Total: %d, Active: %d, Idle: %d, Waiters: %d", 
-            obj.toString(), getMaxTotal(), getNumActive(), getNumIdle(), getNumWaiters());
+        version(HUNT_DEBUG) {
+            infof("object: %s, Total: %d, Active: %d, Idle: %d, Waiters: %d", 
+                (cast(Object)obj).toString(), getMaxTotal(), getNumActive(), 
+                getNumIdle(), getNumWaiters());
+        }
     }
 
     /**
@@ -978,7 +981,11 @@ version(HUNT_REDIS_DEBUG) tracef("destroyedByEvictorCount = %d", destroyedByEvic
     private void destroy(IPooledObject toDestroy){
         toDestroy.invalidate();
         idleObjects.remove(toDestroy);
-        allObjects.remove(new IdentityWrapper!T(cast(T)toDestroy.getObject()));
+        
+        auto pooledObj = cast(PooledObject!(T))toDestroy;
+        T obj = pooledObj.getObject();
+
+        allObjects.remove(new IdentityWrapper!T(obj));
         try {
             factory.destroyObject(toDestroy);
         } finally {

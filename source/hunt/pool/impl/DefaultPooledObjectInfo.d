@@ -97,12 +97,13 @@ class DefaultPooledObjectInfo : DefaultPooledObjectInfoMBean {
 
     override
     string getPooledObjectType() {
-        return typeid(pooledObject.getObject()).name;
+        return pooledObject.objectType.toString();
+        // return typeid(pooledObject.getObject()).name;
     }
 
     override
     string getPooledObjectToString() {
-        return pooledObject.getObject().toString();
+        return pooledObject.objectToString();
     }
 
     override
