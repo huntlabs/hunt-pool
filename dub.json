@@ -2,10 +2,10 @@
 	"name": "hunt-pool",
 	"targetType": "library",
 	"description": "A common object pooling library.",
-	"copyright": "Copyright © 2019, HuntLabs",
+	"copyright": "Copyright © 2019-2020, HuntLabs",
 	"homepage": "https://www.huntLabs.net",
 	"license": "Apache-2.0",
 	"dependencies": {
-		"hunt": "~>1.4.0"
+		"hunt": "~>1.4.8"
 	}
 }

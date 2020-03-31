@@ -535,7 +535,7 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
 
         PooledObject!(T) pp = cast(PooledObject!(T))p;
         T obj = pp.getObject();
-        version(HUNT_DEBUG) infof("object: %s, Total: %d, Active: %d, Idle: %d, Waiters: %d", 
+        version(HUNT_POOL_DEBUG) infof("object: %s, Total: %d, Active: %d, Idle: %d, Waiters: %d", 
             (cast(Object)obj).toString(), getMaxTotal(), getNumActive(), getNumIdle(), getNumWaiters());
 
         return obj;
