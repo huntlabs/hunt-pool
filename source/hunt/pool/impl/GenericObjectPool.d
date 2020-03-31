@@ -428,14 +428,16 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
      *                   error
      */
     T borrowObject(long borrowMaxWaitMillis) {
-        version(HUNT_POOL_DEBUG) infof("%s, Total: %d, Active: %d, Idle: %d, Waiters: %d", typeid(T), 
-            getMaxTotal(), getNumActive(), getNumIdle(), getNumWaiters());
+        version(HUNT_DEBUG) { 
+            tracef("%s, Total: %d, Active: %d, Idle: %d, Waiters: %d, MaxWaitMillis: %d", 
+                typeid(T), getMaxTotal(), getNumActive(), getNumIdle(), getNumWaiters(), borrowMaxWaitMillis);
+        }
+
         assertOpen();
 
         AbandonedConfig ac = this.abandonedConfig;
         if (ac !is null && ac.getRemoveAbandonedOnBorrow() &&
-                (getNumIdle() < 2) &&
-                (getNumActive() > getMaxTotal() - 3) ) {
+                (getNumIdle() < 2) && (getNumActive() > getMaxTotal() - 3) ) {
             removeAbandoned(ac);
         }
 
@@ -457,6 +459,7 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
                     isCreated = true;
                 }
             }
+
             if (blockWhenExhausted) {
                 if (p is null) {
                     if (borrowMaxWaitMillis < 0) {
@@ -465,15 +468,16 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
                         p = idleObjects.pollFirst(borrowMaxWaitMillis.msecs);
                     }
                 }
+
                 if (p is null) {
-                    throw new NoSuchElementException(
-                            "Timeout waiting for idle object");
+                    throw new NoSuchElementException("Timeout waiting for idle object");
                 }
             } else {
                 if (p is null) {
                     throw new NoSuchElementException("Pool exhausted");
                 }
             }
+
             if (!p.allocate()) {
                 p = null;
             }
@@ -494,9 +498,11 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
                         throw nsee;
                     }
                 }
+
                 if (p !is null && (getTestOnBorrow() || isCreated && getTestOnCreate())) {
                     bool validate = false;
                     Throwable validationThrowable = null;
+
                     try {
                         validate = factory.validateObject(p);
                     } catch (Throwable t) {
@@ -505,6 +511,7 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
                         PoolUtils.checkRethrow(t);
                         validationThrowable = t;
                     }
+
                     if (!validate) {
                         try {
                             destroy(p);
@@ -512,6 +519,7 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
                         } catch (Exception e) {
                             // Ignore - validation failure is more important
                         }
+
                         p = null;
                         if (isCreated) {
                             NoSuchElementException nsee = new NoSuchElementException(
@@ -527,8 +535,8 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
 
         PooledObject!(T) pp = cast(PooledObject!(T))p;
         T obj = pp.getObject();
-        version(HUNT_POOL_DEBUG) infof("object: %s, Total: %d, Active: %d, Idle: %d, Waiters: %d", 
-            obj.toString(), getMaxTotal(), getNumActive(), getNumIdle(), getNumWaiters());
+        version(HUNT_DEBUG) infof("object: %s, Total: %d, Active: %d, Idle: %d, Waiters: %d", 
+            (cast(Object)obj).toString(), getMaxTotal(), getNumActive(), getNumIdle(), getNumWaiters());
 
         return obj;
     }
@@ -1125,7 +1133,7 @@ version(HUNT_REDIS_DEBUG) tracef("destroyedByEvictorCount = %d", destroyedByEvic
         foreach(PooledObject!(T) pooledObject; toRemove) {
             if (ac.getLogAbandoned()) {
                 // pooledObject.printStackTrace(ac.getLogWriter());
-                trace("xxxxxxx");
+                warning("running here");
             }
             try {
                 invalidateObject(pooledObject.getObject());
@@ -1163,6 +1171,8 @@ version(HUNT_REDIS_DEBUG) tracef("destroyedByEvictorCount = %d", destroyedByEvic
      */
     // override
     int getNumWaiters() {
+        // TODO: Tasks pending completion -@zhangxueping at 2020-03-31T16:01:28+08:00
+        // to check this
         if (getBlockWhenExhausted()) {
             return idleObjects.getTakeQueueLength();
         }
