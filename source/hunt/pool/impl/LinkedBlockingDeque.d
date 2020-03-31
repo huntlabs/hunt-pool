@@ -16,15 +16,6 @@
  */
 module hunt.pool.impl.LinkedBlockingDeque;
 
-// import java.io.Serializable;
-// import java.util.AbstractQueue;
-// import java.util.Collection;
-// import java.util.Deque;
-// import java.util.Iterator;
-// import java.util.NoSuchElementException;
-// import java.util.concurrent.TimeUnit;
-// import java.util.concurrent.locks.Condition;
-
 import hunt.collection;
 import hunt.Exceptions;
 import hunt.logging.ConsoleLogger;
@@ -604,20 +595,21 @@ class LinkedBlockingDeque(E) : AbstractDeque!(E) { // , Serializable
      */
     override E pollFirst(Duration timeout) {
         lock.lock();
+        scope(exit) lock.unlock();
         
         bool isTimeout = false;
+        E x;
         try {
-            E x;
-            while ( (x = unlinkFirst()) is null) {
-                if (isTimeout) {
-                    return null;
-                }
+            while ( (x = unlinkFirst()) is null && !isTimeout) {
                 isTimeout = !notEmpty.wait(timeout);
+                // infof("result: %s, isTimeout: %s, in %s", x is null, isTimeout, timeout);
             }
-            return x;
-        } finally {
-            lock.unlock();
+        } catch(Exception ex) {
+            debug warning(ex.msg);
+            version(HUNT_DEBUG) warning(ex);
         }
+
+        return x;
     }
 
     /**
@@ -631,21 +623,24 @@ class LinkedBlockingDeque(E) : AbstractDeque!(E) { // , Serializable
      * @throws InterruptedException if the current thread is interrupted
      */
     E pollLast(Duration timeout) {
-        // long nanos = unit.toNanos(timeout);
         lock.lock();
+        scope(exit) lock.unlock();
+
         bool isTimeout = false;
+        E x;
         try {
-            E x;
             while ( (x = unlinkLast()) is null) {
                 if (isTimeout) {
                     return null;
                 }
                 isTimeout = !notEmpty.wait(timeout);
             }
-            return x;
-        } finally {
-            lock.unlock();
+        } catch(Exception ex) {
+            debug warning(ex.msg);
+            version(HUNT_DEBUG) warning(ex);
         }
+
+        return x;
     }
 
     /**
@@ -675,6 +670,7 @@ class LinkedBlockingDeque(E) : AbstractDeque!(E) { // , Serializable
     override
     E peekFirst() {
         lock.lock();
+        
         try {
             return first is null ? null : first.item;
         } finally {
@@ -1271,12 +1267,8 @@ class LinkedBlockingDeque(E) : AbstractDeque!(E) { // , Serializable
      */
     int getTakeQueueLength() {
         lock.lock();
-        try {
-        //    return lock.getWaitQueueLength(notEmpty);
-            return notEmpty.getWaitQueueLength();
-        } finally {
-            lock.unlock();
-        }
+        scope(exit) lock.unlock();
+        return notEmpty.getWaitQueueLength();
     }
 
     /**
@@ -1285,11 +1277,13 @@ class LinkedBlockingDeque(E) : AbstractDeque!(E) { // , Serializable
      */
     void interuptTakeWaiters() {
         lock.lock();
+        scope(exit) lock.unlock();
+        
         try {
-        //    lock.interruptWaiters(notEmpty);
             notEmpty.notifyAll();
-        } finally {
-            lock.unlock();
+        } catch(Exception ex) {
+            debug warning(ex.msg);
+            version(HUNT_DEBUG) warning(ex);
         }
     }
 }

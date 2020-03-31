@@ -15,8 +15,8 @@ void main() {
 	Thread.getThis().name = "main-thread";
 	trace("Main thread");
 	
-	testUnits!(PoolTest);
-	// testUnits!(TestLinkedBlockingDeque);
+	// testUnits!(PoolTest);
+	testUnits!(TestLinkedBlockingDeque);
 
 	// thread_joinAll();
 	trace("running here");

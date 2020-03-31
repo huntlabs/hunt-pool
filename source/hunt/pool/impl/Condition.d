@@ -15,7 +15,6 @@
  */
 module hunt.pool.impl.Condition;
 
-
 import core.sync.exception;
 import hunt.pool.impl.Mutex;
 import core.time;
@@ -94,9 +93,31 @@ class Condition
         else version (Posix)
         {
             m_assocMutex = m;
-            int rc = pthread_cond_init( &m_hndl, null );
-            if ( rc )
-                throw new SyncError( "Unable to initialize condition" );
+            static if ( is( typeof( pthread_condattr_setclock ) ) )
+            {
+                () @trusted
+                {
+                    pthread_condattr_t attr = void;
+                    int rc  = pthread_condattr_init( &attr );
+                    if ( rc )
+                        throw new SyncError( "Unable to initialize condition" );
+                    rc = pthread_condattr_setclock( &attr, CLOCK_MONOTONIC );
+                    if ( rc )
+                        throw new SyncError( "Unable to initialize condition" );
+                    rc = pthread_cond_init( &m_hndl, &attr );
+                    if ( rc )
+                        throw new SyncError( "Unable to initialize condition" );
+                    rc = pthread_condattr_destroy( &attr );
+                    if ( rc )
+                        throw new SyncError( "Unable to initialize condition" );
+                } ();
+            }
+            else
+            {
+                int rc = pthread_cond_init( &m_hndl, null );
+                if ( rc )
+                    throw new SyncError( "Unable to initialize condition" );
+            }
         }
     }
 
@@ -164,8 +185,7 @@ class Condition
             int rc = pthread_cond_wait( &m_hndl, m_assocMutex.handleAddr() );
             if ( rc )
                 throw new SyncError( "Unable to wait for condition" );
-            
-            m_numWaitersBlocked++;
+                m_numWaitersBlocked++;
         }
     }
 
@@ -218,6 +238,7 @@ class Condition
                 m_numWaitersBlocked++;
                 return true;
             }
+            
             if ( rc == ETIMEDOUT )
                 return false;
             throw new SyncError( "Unable to wait for condition" );
@@ -239,13 +260,28 @@ class Condition
         }
         else version (Posix)
         {
-            int rc = pthread_cond_signal( &m_hndl );
+            // Since OS X 10.7 (Lion), pthread_cond_signal returns EAGAIN after retrying 8192 times,
+            // so need to retrying while it returns EAGAIN.
+            //
+            // 10.7.0 (Lion):          http://www.opensource.apple.com/source/Libc/Libc-763.11/pthreads/pthread_cond.c
+            // 10.8.0 (Mountain Lion): http://www.opensource.apple.com/source/Libc/Libc-825.24/pthreads/pthread_cond.c
+            // 10.10.0 (Yosemite):     http://www.opensource.apple.com/source/libpthread/libpthread-105.1.4/src/pthread_cond.c
+            // 10.11.0 (El Capitan):   http://www.opensource.apple.com/source/libpthread/libpthread-137.1.1/src/pthread_cond.c
+            // 10.12.0 (Sierra):       http://www.opensource.apple.com/source/libpthread/libpthread-218.1.3/src/pthread_cond.c
+            // 10.13.0 (High Sierra):  http://www.opensource.apple.com/source/libpthread/libpthread-301.1.6/src/pthread_cond.c
+            // 10.14.0 (Mojave):       http://www.opensource.apple.com/source/libpthread/libpthread-330.201.1/src/pthread_cond.c
+            // 10.14.1 (Mojave):       http://www.opensource.apple.com/source/libpthread/libpthread-330.220.2/src/pthread_cond.c
+
+            int rc;
+            do {
+                rc = pthread_cond_signal( &m_hndl );
+            } while ( rc == EAGAIN );
             if ( rc )
                 throw new SyncError( "Unable to notify condition" );
-            
+
             m_numWaitersBlocked--;
             if(m_numWaitersBlocked < 0 )
-                m_numWaitersBlocked = 0;
+                m_numWaitersBlocked = 0;                
         }
     }
 
@@ -264,13 +300,29 @@ class Condition
         }
         else version (Posix)
         {
-            int rc = pthread_cond_broadcast( &m_hndl );
+            // Since OS X 10.7 (Lion), pthread_cond_broadcast returns EAGAIN after retrying 8192 times,
+            // so need to retrying while it returns EAGAIN.
+            //
+            // 10.7.0 (Lion):          http://www.opensource.apple.com/source/Libc/Libc-763.11/pthreads/pthread_cond.c
+            // 10.8.0 (Mountain Lion): http://www.opensource.apple.com/source/Libc/Libc-825.24/pthreads/pthread_cond.c
+            // 10.10.0 (Yosemite):     http://www.opensource.apple.com/source/libpthread/libpthread-105.1.4/src/pthread_cond.c
+            // 10.11.0 (El Capitan):   http://www.opensource.apple.com/source/libpthread/libpthread-137.1.1/src/pthread_cond.c
+            // 10.12.0 (Sierra):       http://www.opensource.apple.com/source/libpthread/libpthread-218.1.3/src/pthread_cond.c
+            // 10.13.0 (High Sierra):  http://www.opensource.apple.com/source/libpthread/libpthread-301.1.6/src/pthread_cond.c
+            // 10.14.0 (Mojave):       http://www.opensource.apple.com/source/libpthread/libpthread-330.201.1/src/pthread_cond.c
+            // 10.14.1 (Mojave):       http://www.opensource.apple.com/source/libpthread/libpthread-330.220.2/src/pthread_cond.c
+
+            int rc;
+            do {
+                rc = pthread_cond_broadcast( &m_hndl );
+            } while ( rc == EAGAIN );
             if ( rc )
                 throw new SyncError( "Unable to notify condition" );
             
             m_numWaitersBlocked = 0;
         }
     }
+
 
     bool hasWaiters() {
         return m_numWaitersBlocked>0;
@@ -279,7 +331,6 @@ class Condition
     int getWaitQueueLength() {
         return m_numWaitersBlocked;
     }
-
 
 private:
     version (Windows)
@@ -449,7 +500,7 @@ private:
         Mutex               m_assocMutex;
         pthread_cond_t      m_hndl;
     }
-
+    
         int                 m_numWaitersBlocked     = 0;
 }
 
@@ -458,12 +509,11 @@ private:
 // Unit Tests
 ////////////////////////////////////////////////////////////////////////////////
 
-
-version (unittest)
+unittest
 {
-    private import core.thread;
-    private import hunt.pool.impl.Mutex;
-    private import core.sync.semaphore;
+    import core.thread;
+    import hunt.pool.impl.Mutex;
+    import core.sync.semaphore;
 
 
     void testNotify()
@@ -620,11 +670,7 @@ version (unittest)
         assert( !alertedTwo );
     }
 
-
-    unittest
-    {
-        testNotify();
-        testNotifyAll();
-        testWaitTimeout();
-    }
+    testNotify();
+    testNotifyAll();
+    testWaitTimeout();
 }

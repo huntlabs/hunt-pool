@@ -230,7 +230,10 @@ class TestLinkedBlockingDeque {
     @Test
     void testPollFirstWithTimeout(){
         assertNull(deque.pollFirst());
-        assertNull(deque.pollFirst(50.msecs));
+        Duration dur = 1.seconds; // 50.msecs;
+        tracef("waiting for the result in %s", dur);
+        assertNull(deque.pollFirst(dur));
+        info("The time's up");
     }
 
     @Test
@@ -505,3 +508,4 @@ class TestLinkedBlockingDeque {
         iter.popFront();
     }
 }
+
