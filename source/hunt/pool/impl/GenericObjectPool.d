@@ -37,20 +37,11 @@ import hunt.pool.SwallowedExceptionListener;
 import hunt.pool.TrackedUse;
 import hunt.pool.UsageTracking;
 
-// import java.util.ArrayList;
-// import java.util.HashSet;
-// import java.util.Iterator;
-// import java.util.Map;
-// import java.util.NoSuchElementException;
-// import java.util.Set;
-// import java.util.concurrent.ConcurrentHashMap;
-// import java.util.concurrent.TimeUnit;
-// import java.util.concurrent.atomic.AtomicLong;
-
 import hunt.Boolean;
 import hunt.collection;
 import hunt.concurrency.atomic.AtomicHelper;
 import hunt.concurrency.thread;
+import hunt.concurrency.SimpleObjectLock;
 import hunt.Exceptions;
 import hunt.logging.ConsoleLogger;
 import hunt.text.StringBuilder;
@@ -127,7 +118,7 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
             GenericObjectPoolConfig config) {
 
         super(config, ONAME_BASE, config.getJmxNamePrefix());
-        makeObjectCountLock = new Object();
+        makeObjectCountLock = new SimpleObjectLock();
         // allObjects = new ConcurrentHashMap<>();
         allObjects = new HashMap!(IdentityWrapper!(T), PooledObject!(T))();
 
@@ -431,6 +422,11 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
         version(HUNT_DEBUG) { 
             tracef("%s, Total: %d, Active: %d, Idle: %d, Waiters: %d, MaxWaitMillis: %d", 
                 typeid(T), getMaxTotal(), getNumActive(), getNumIdle(), getNumWaiters(), borrowMaxWaitMillis);
+
+            scope(exit) {
+                infof("Total: %d, Active: %d, Idle: %d, Waiters: %d", 
+                    getMaxTotal(), getNumActive(), getNumIdle(), getNumWaiters());
+            }                
         }
 
         assertOpen();
@@ -535,9 +531,7 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
 
         PooledObject!(T) pp = cast(PooledObject!(T))p;
         T obj = pp.getObject();
-        version(HUNT_POOL_DEBUG) infof("object: %s, Total: %d, Active: %d, Idle: %d, Waiters: %d", 
-            (cast(Object)obj).toString(), getMaxTotal(), getNumActive(), getNumIdle(), getNumWaiters());
-
+        
         return obj;
     }
 
@@ -889,7 +883,7 @@ version(HUNT_REDIS_DEBUG) tracef("destroyedByEvictorCount = %d", destroyedByEvic
      *
      * @throws Exception if the object factory's {@code makeObject} fails
      */
-    private PooledObject!(T) create(){
+    private PooledObject!(T) create() {
         int localMaxTotal = getMaxTotal();
         // This simplifies the code later in this method
         if (localMaxTotal < 0) {
@@ -923,7 +917,8 @@ version(HUNT_REDIS_DEBUG) tracef("destroyedByEvictorCount = %d", destroyedByEvic
                         // fail so wait until they complete and then re-test if
                         // the pool is at capacity or not.
                         // makeObjectCountLock.wait(localMaxWaitTimeMillis);
-                        ThreadEx.sleep(localMaxWaitTimeMillis.msecs);
+                        makeObjectCountLock.wait(localMaxWaitTimeMillis.msecs);
+                        // ThreadEx.sleep(localMaxWaitTimeMillis.msecs);
                     }
                 } else {
                     // The pool is not at capacity. Create a new object.
@@ -953,14 +948,8 @@ version(HUNT_REDIS_DEBUG) tracef("destroyedByEvictorCount = %d", destroyedByEvic
         } finally {
             synchronized (makeObjectCountLock) {
                 makeObjectCount--;
-                // makeObjectCountLock.notifyAll();
-                // BUG: Reported defects -@Administrator at 2019-12-31T18:16:45+08:00
-                // https://github.com/huntlabs/hunt-framework/issues/138
-                // LockSupport.unpark();
+                makeObjectCountLock.notifyAll();
             }
-            // TODO: Tasks pending completion -@Administrator at 2019-12-31T18:17:13+08:00
-            // to check this
-            LockSupport.unpark();
         }
 
         AbandonedConfig ac = this.abandonedConfig;
@@ -1251,12 +1240,11 @@ version(HUNT_REDIS_DEBUG) tracef("destroyedByEvictorCount = %d", destroyedByEvic
      */
     private shared long createCount = 0; // new AtomicLong(0);
     private long makeObjectCount = 0;
-    private Object makeObjectCountLock; // = new Object();
+    private SimpleObjectLock makeObjectCountLock; // = new Object();
     private LinkedBlockingDeque!(IPooledObject) idleObjects;
 
     // JMX specific attributes
-    private enum string ONAME_BASE =
-        "hunt.pool:type=GenericObjectPool,name=";
+    private enum string ONAME_BASE = "hunt.pool:type=GenericObjectPool,name=";
 
     // Additional configuration properties for abandoned object tracking
     private AbandonedConfig abandonedConfig = null;

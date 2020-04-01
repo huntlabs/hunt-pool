@@ -176,6 +176,11 @@ class Condition
      */
     void wait()
     {
+        m_numWaitersBlocked++;
+        scope(exit) {
+            m_numWaitersBlocked--;
+        }
+
         version (Windows)
         {
             timedWait( INFINITE );
@@ -185,7 +190,6 @@ class Condition
             int rc = pthread_cond_wait( &m_hndl, m_assocMutex.handleAddr() );
             if ( rc )
                 throw new SyncError( "Unable to wait for condition" );
-                m_numWaitersBlocked++;
         }
     }
 
@@ -213,6 +217,12 @@ class Condition
     }
     do
     {
+        
+        m_numWaitersBlocked++;
+        scope(exit) {
+            m_numWaitersBlocked--;
+        }
+
         version (Windows)
         {
             auto maxWaitMillis = dur!("msecs")( uint.max - 1 );
@@ -235,7 +245,6 @@ class Condition
                                              m_assocMutex.handleAddr(),
                                              &t );
             if ( !rc ) {
-                m_numWaitersBlocked++;
                 return true;
             }
             
@@ -277,11 +286,7 @@ class Condition
                 rc = pthread_cond_signal( &m_hndl );
             } while ( rc == EAGAIN );
             if ( rc )
-                throw new SyncError( "Unable to notify condition" );
-
-            m_numWaitersBlocked--;
-            if(m_numWaitersBlocked < 0 )
-                m_numWaitersBlocked = 0;                
+                throw new SyncError( "Unable to notify condition" );            
         }
     }
 
@@ -318,8 +323,6 @@ class Condition
             } while ( rc == EAGAIN );
             if ( rc )
                 throw new SyncError( "Unable to notify condition" );
-            
-            m_numWaitersBlocked = 0;
         }
     }
 
