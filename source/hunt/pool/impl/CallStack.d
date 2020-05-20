@@ -19,7 +19,7 @@ module hunt.pool.impl.CallStack;
 import hunt.pool.PooledObject;
 import hunt.pool.UsageTracking;
 
-import hunt.io.Writer;
+import hunt.stream.Writer;
 
 /**
  * Strategy for obtaining and printing the current call stack. This is primarily useful for

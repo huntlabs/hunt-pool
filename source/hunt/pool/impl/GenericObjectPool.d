@@ -419,13 +419,15 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
      *                   error
      */
     T borrowObject(long borrowMaxWaitMillis) {
-        version(HUNT_DEBUG) { 
-            tracef("%s, Total: %d, Active: %d, Idle: %d, Waiters: %d, MaxWaitMillis: %d", 
-                typeid(T), getMaxTotal(), getNumActive(), getNumIdle(), getNumWaiters(), borrowMaxWaitMillis);
+        version(HUNT_DEBUG) {
+            import core.thread;
+            tracef("%s, Total: %d, Active: %d, Idle: %d, Waiters: %d, MaxWaitMillis: %d, Threads: %d", 
+                typeid(T), getMaxTotal(), getNumActive(), getNumIdle(), getNumWaiters(), 
+                borrowMaxWaitMillis, Thread.getAll().length);
 
             scope(exit) {
-                infof("Total: %d, Active: %d, Idle: %d, Waiters: %d", 
-                    getMaxTotal(), getNumActive(), getNumIdle(), getNumWaiters());
+                infof("Total: %d, Active: %d, Idle: %d, Waiters: %d, Threads: %d", 
+                    getMaxTotal(), getNumActive(), getNumIdle(), getNumWaiters(), Thread.getAll().length);
             }                
         }
 
@@ -814,7 +816,7 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
                         evict = false;
                     }
 
-                    version(HUNT_REDIS_DEBUG) tracef("evict=%s", evict);
+                    // version(HUNT_REDIS_DEBUG) tracef("evict=%s", evict);
 
                     if (evict) {
                         destroy(underTest);
@@ -849,7 +851,7 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
                         }
                     }
 
-version(HUNT_REDIS_DEBUG) tracef("destroyedByEvictorCount = %d", destroyedByEvictorCount)                    ;
+                    // version(HUNT_REDIS_DEBUG) tracef("destroyedByEvictorCount = %d", destroyedByEvictorCount)                    ;
                 }
             }
         }

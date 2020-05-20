@@ -17,7 +17,7 @@
 module hunt.pool.impl.NoOpCallStack;
 
 import hunt.pool.impl.CallStack;
-import hunt.io.Writer;
+import hunt.stream.Writer;
 
 /**
  * CallStack strategy using no-op implementations of all functionality. Can be used by default when abandoned object

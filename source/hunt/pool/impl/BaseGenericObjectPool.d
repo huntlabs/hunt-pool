@@ -257,12 +257,14 @@ abstract class BaseGenericObjectPool : BaseObject {
         setMinEvictableIdleTimeMillis(conf.getMinEvictableIdleTimeMillis());
         setTimeBetweenEvictionRunsMillis(conf.getTimeBetweenEvictionRunsMillis());
         setSoftMinEvictableIdleTimeMillis(conf.getSoftMinEvictableIdleTimeMillis());
-        EvictionPolicy policy = conf.getEvictionPolicy();
-        if(policy is null) {
-            warning("policy is null");
-        } else {
-            setEvictionPolicy(policy);
-        }
+        // TODO: Tasks pending completion -@zhangxueping at 2020-04-15T10:52:55+08:00
+        // 
+        // EvictionPolicy policy = conf.getEvictionPolicy();
+        // if(policy is null) {
+        //     warning("policy is null");
+        // } else {
+        //     setEvictionPolicy(policy);
+        // }
         setEvictorShutdownTimeoutMillis(conf.getEvictorShutdownTimeoutMillis());
     }
 

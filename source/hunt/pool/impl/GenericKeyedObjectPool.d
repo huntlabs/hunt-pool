@@ -17,36 +17,17 @@
 module hunt.pool.impl.GenericKeyedObjectPool;
 
 import hunt.pool.impl.BaseGenericObjectPool;
-
-// import java.util.ArrayList;
-// import java.util.Deque;
-// import java.util.HashMap;
-// import java.util.Iterator;
-// import java.util.List;
-// import java.util.Map;
-// import java.util.Map.Entry;
-// import java.util.NoSuchElementException;
-// import java.util.TreeMap;
-// import java.util.concurrent.ConcurrentHashMap;
-// import java.util.concurrent.TimeUnit;
-// import java.util.concurrent.atomic.AtomicInteger;
-// import java.util.concurrent.atomic.AtomicLong;
-// import java.util.concurrent.locks.Lock;
-// import java.util.concurrent.locks.ReadWriteLock;
-// import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import hunt.collection;
-import hunt.Exceptions;
-
-import hunt.Integer;
-import hunt.concurrency.LinkedBlockingQueue;
-
 import hunt.pool.KeyedObjectPool;
 import hunt.pool.KeyedPooledObjectFactory;
 import hunt.pool.PoolUtils;
 import hunt.pool.PooledObject;
 import hunt.pool.PooledObjectState;
 import hunt.pool.SwallowedExceptionListener;
+
+import hunt.collection;
+import hunt.Exceptions;
+import hunt.Integer;
+import hunt.concurrency.LinkedBlockingQueue;
 
 import core.sync.rwmutex;
 
