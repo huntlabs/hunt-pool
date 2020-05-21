@@ -22,7 +22,7 @@ import hunt.pool.impl.DefaultPooledObjectInfoMBean;
 // import java.text.SimpleDateFormat;
 
 import hunt.Exceptions;
-import hunt.text.StringBuilder;
+import hunt.util.StringBuilder;
 
 import hunt.pool.PooledObject;
 

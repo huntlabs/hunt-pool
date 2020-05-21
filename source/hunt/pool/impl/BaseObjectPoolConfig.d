@@ -22,7 +22,7 @@ import hunt.pool.impl.EvictionPolicy;
 
 import hunt.pool.BaseObject;
 
-import hunt.text.StringBuilder;
+import hunt.util.StringBuilder;
 import hunt.util.Common;
 import hunt.util.ObjectUtils;
 

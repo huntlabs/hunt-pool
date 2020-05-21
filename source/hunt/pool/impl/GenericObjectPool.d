@@ -44,7 +44,7 @@ import hunt.concurrency.thread;
 import hunt.concurrency.SimpleObjectLock;
 import hunt.Exceptions;
 import hunt.logging.ConsoleLogger;
-import hunt.text.StringBuilder;
+import hunt.util.StringBuilder;
 import hunt.util.DateTime;
 
 import core.time;

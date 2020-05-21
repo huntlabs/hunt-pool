@@ -19,7 +19,7 @@ module hunt.pool.impl.AbandonedConfig;
 
 import hunt.pool.TrackedUse;
 import hunt.pool.UsageTracking;
-import hunt.text.StringBuilder;
+import hunt.util.StringBuilder;
 
 // import java.io.PrintWriter;
 

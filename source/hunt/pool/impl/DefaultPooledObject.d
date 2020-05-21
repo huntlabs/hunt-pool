@@ -27,7 +27,7 @@ import hunt.pool.TrackedUse;
 import hunt.collection;
 import hunt.concurrency.atomic.AtomicHelper;
 import hunt.Exceptions;
-import hunt.text.StringBuilder;
+import hunt.util.StringBuilder;
 import hunt.util.DateTime;
 
 import std.algorithm;

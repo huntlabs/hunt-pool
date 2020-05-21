@@ -17,7 +17,7 @@
 module hunt.pool.impl.EvictionConfig;
 
 import hunt.Long;
-import hunt.text.StringBuilder;
+import hunt.util.StringBuilder;
 
 /**
  * This class is used by pool implementations to pass configuration information
