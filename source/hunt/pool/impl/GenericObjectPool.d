@@ -117,8 +117,8 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
     this(PooledObjectFactory!(T) factory,
             GenericObjectPoolConfig config) {
 
+        makeObjectCountLock = new Object();
         super(config, ONAME_BASE, config.getJmxNamePrefix());
-        makeObjectCountLock = new SimpleObjectLock();
         // allObjects = new ConcurrentHashMap<>();
         allObjects = new HashMap!(IdentityWrapper!(T), PooledObject!(T))();
 
@@ -895,6 +895,8 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
         long localStartTimeMillis = DateTime.currentTimeMillis();
         long localMaxWaitTimeMillis = max(getMaxWaitMillis(), 0);
 
+        SimpleObjectLock objectLock = new SimpleObjectLock();
+
         // Flag that indicates if create should:
         // - TRUE:  call the factory to create an object
         // - FALSE: return null
@@ -918,9 +920,7 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
                         // bring the pool to capacity. Those calls might also
                         // fail so wait until they complete and then re-test if
                         // the pool is at capacity or not.
-                        // makeObjectCountLock.wait(localMaxWaitTimeMillis);
-                        makeObjectCountLock.wait(localMaxWaitTimeMillis.msecs);
-                        // ThreadEx.sleep(localMaxWaitTimeMillis.msecs);
+                        objectLock.wait(localMaxWaitTimeMillis.msecs);
                     }
                 } else {
                     // The pool is not at capacity. Create a new object.
@@ -948,10 +948,12 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
             createCount.decrement();
             throw e;
         } finally {
+            // FIXME: Needing refactor or cleanup -@Administrator at 2020-06-18T10:20:26+08:00
+            // Failed to build with LDC. Is it a bug or an error?
             synchronized (makeObjectCountLock) {
                 makeObjectCount--;
-                makeObjectCountLock.notifyAll();
             }
+            objectLock.notifyAll();
         }
 
         AbandonedConfig ac = this.abandonedConfig;
@@ -1242,7 +1244,7 @@ class GenericObjectPool(T) : BaseGenericObjectPool,
      */
     private shared long createCount = 0; // new AtomicLong(0);
     private long makeObjectCount = 0;
-    private SimpleObjectLock makeObjectCountLock; // = new Object();
+    private Object makeObjectCountLock; // = new Object();
     private LinkedBlockingDeque!(IPooledObject) idleObjects;
 
     // JMX specific attributes
